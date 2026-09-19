@@ -24,3 +24,16 @@ export function BalancePill({ credits, size = 'lg' }) {
     </Badge>
   )
 }
+
+export function lastVisitLabel(iso) {
+  if (!iso) return 'Never visited'
+  const days = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000)
+  if (days <= 0) return 'Visited today'
+  if (days === 1) return 'Visited yesterday'
+  if (days < 30) return `Visited ${days} days ago`
+  return `Last visit ${new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}`
+}
+
+export function customerHint(c) {
+  return [c.phone, c.notes, lastVisitLabel(c.lastVisitAt)].filter(Boolean).join(' · ')
+}

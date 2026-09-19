@@ -72,3 +72,20 @@ describe('today stats', () => {
     expect(res.body.visits).toHaveLength(1)
   })
 })
+
+describe('search', () => {
+  it('returns last visit and supports exact name match for duplicate checks', async () => {
+    const owner = await ownerAgent()
+    const a = await createCustomer(owner, { name: 'Ravi Kumar', phone: '111' })
+    await createCustomer(owner, { name: 'Ravi Kumaran', phone: '222' })
+    await owner.post(`/api/customers/${a.id}/topup`).send({ packId: 1 })
+    await owner.post(`/api/customers/${a.id}/entry`).send({})
+    const loose = await owner.get('/api/customers?q=ravi')
+    expect(loose.body).toHaveLength(2)
+    expect(loose.body.find((c) => c.id === a.id).lastVisitAt).toBeTruthy()
+    expect(loose.body.find((c) => c.id !== a.id).lastVisitAt).toBeNull()
+    const exact = await owner.get('/api/customers?q=ravi%20kumar&exact=1')
+    expect(exact.body).toHaveLength(1)
+    expect(exact.body[0].id).toBe(a.id)
+  })
+})

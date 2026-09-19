@@ -16,3 +16,22 @@ body {
 .balance-pill {
   font-variant-numeric: tabular-nums;
 }
+
+/* Keep bottom toasts above the fixed bottom nav */
+.mantine-Notifications-root[data-position='bottom-center'] {
+  bottom: calc(76px + env(safe-area-inset-bottom));
+}
+
+/* Empty toast containers must never intercept taps */
+.mantine-Notifications-root {
+  pointer-events: none;
+}
+.mantine-Notifications-root > * {
+  pointer-events: auto;
+}
+
+/* Password masking without type=password (avoids the browser's save-password sheet) */
+.masked-input input {
+  -webkit-text-security: disc;
+  text-security: disc;
+}

@@ -1,14 +1,66 @@
-import { Button, Center, Modal, Stack, Text } from '@mantine/core'
+import { Button, Center, Group, Modal, Stack, Text } from '@mantine/core'
 import { modals } from '@mantine/modals'
 import { notifications } from '@mantine/notifications'
-import { QRCodeSVG } from 'qrcode.react'
-import { useState } from 'react'
+import { IconDownload, IconShare } from '@tabler/icons-react'
+import { QRCodeCanvas, QRCodeSVG } from 'qrcode.react'
+import { useRef, useState } from 'react'
 import { api } from '../api.js'
 import { useAuth } from '../auth.jsx'
+
+function fileNameFor(name) {
+  return `${name.replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase() || 'customer'}-buffet-pass.png`
+}
+
+// Compose a shareable card: name on top, QR in the middle, label below.
+async function makeImage(sourceCanvas, name) {
+  const W = 720, H = 900
+  const canvas = document.createElement('canvas')
+  canvas.width = W
+  canvas.height = H
+  const ctx = canvas.getContext('2d')
+  ctx.fillStyle = '#ffffff'
+  ctx.fillRect(0, 0, W, H)
+  ctx.fillStyle = '#1f1a17'
+  ctx.textAlign = 'center'
+  ctx.font = 'bold 44px system-ui, sans-serif'
+  ctx.fillText(name, W / 2, 90, W - 80)
+  ctx.drawImage(sourceCanvas, (W - 560) / 2, 140, 560, 560)
+  ctx.fillStyle = '#6b6360'
+  ctx.font = '28px system-ui, sans-serif'
+  ctx.fillText('Show this at the counter', W / 2, 770)
+  ctx.font = 'bold 28px system-ui, sans-serif'
+  ctx.fillStyle = '#e8590c'
+  ctx.fillText('Buffet Pass', W / 2, 830)
+  const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'))
+  return new File([blob], fileNameFor(name), { type: 'image/png' })
+}
 
 export function QrModal({ opened, onClose, customer, onRegenerated }) {
   const { user } = useAuth()
   const [busy, setBusy] = useState(false)
+  const canvasRef = useRef(null)
+
+  const share = async () => {
+    setBusy(true)
+    try {
+      const file = await makeImage(canvasRef.current, customer.name)
+      if (navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file], title: `${customer.name} — Buffet Pass` })
+      } else {
+        const url = URL.createObjectURL(file)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = file.name
+        a.click()
+        setTimeout(() => URL.revokeObjectURL(url), 5000)
+        notifications.show({ color: 'blue', message: 'Saved as an image — share it from your gallery' })
+      }
+    } catch (err) {
+      if (err?.name !== 'AbortError') notifications.show({ color: 'red', message: err.message })
+    } finally {
+      setBusy(false)
+    }
+  }
 
   const regenerate = () =>
     modals.openConfirmModal({
@@ -17,31 +69,36 @@ export function QrModal({ opened, onClose, customer, onRegenerated }) {
       labels: { confirm: 'Replace', cancel: 'Keep current' },
       confirmProps: { color: 'red' },
       onConfirm: async () => {
-        setBusy(true)
         try {
           const { qr } = await api(`/customers/${customer.id}/regenerate-qr`, { method: 'POST' })
           onRegenerated(qr)
           notifications.show({ color: 'green', message: 'New QR code issued' })
         } catch (err) {
           notifications.show({ color: 'red', message: err.message })
-        } finally {
-          setBusy(false)
         }
       },
     })
 
   return (
     <Modal opened={opened} onClose={onClose} fullScreen title={customer.name} withCloseButton>
-      <Stack align="center" justify="center" pt="xl">
+      <Stack align="center" justify="center" pt="md">
         <Center bg="white" p="lg" style={{ borderRadius: 16 }}>
-          <QRCodeSVG value={customer.qr} size={280} level="M" />
+          <QRCodeSVG value={customer.qr} size={260} level="M" />
         </Center>
-        <Text ta="center" c="dimmed" px="md">
-          Let the customer take a photo of this. They (or a friend) can show it at the counter.
+        <div style={{ display: 'none' }}>
+          <QRCodeCanvas ref={canvasRef} value={customer.qr} size={560} level="M" marginSize={2} />
+        </div>
+        <Text ta="center" c="dimmed" px="md" size="sm">
+          Share it to the customer's WhatsApp, or let them take a photo. They (or a friend) show it at the counter.
         </Text>
-        <Button size="xl" fullWidth onClick={onClose} mt="md">Done</Button>
+        <Group grow w="100%" mt="sm">
+          <Button size="xl" leftSection={navigator.share ? <IconShare size={22} /> : <IconDownload size={22} />} loading={busy} onClick={share}>
+            {navigator.share ? 'Share' : 'Save image'}
+          </Button>
+        </Group>
+        <Button variant="light" color="gray" fullWidth onClick={onClose}>Done</Button>
         {user.role === 'OWNER' && (
-          <Button variant="subtle" color="red" loading={busy} onClick={regenerate}>
+          <Button variant="subtle" color="red" size="sm" onClick={regenerate}>
             Replace QR code
           </Button>
         )}

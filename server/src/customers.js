@@ -7,6 +7,16 @@ import { qrCode } from './qr.js'
 export const customersRouter = Router()
 
 const summary = { id: true, name: true, phone: true, credits: true }
+const searchSelect = {
+  ...summary,
+  notes: true,
+  createdAt: true,
+  transactions: { where: { type: 'ENTRY' }, orderBy: { createdAt: 'desc' }, take: 1, select: { createdAt: true } },
+}
+
+function toSearchRow({ transactions, ...c }) {
+  return { ...c, lastVisitAt: transactions[0]?.createdAt ?? null }
+}
 
 function validateDetails(body, { partial = false } = {}) {
   const out = {}
@@ -25,15 +35,18 @@ function validateDetails(body, { partial = false } = {}) {
 
 customersRouter.get('/', async (req, res) => {
   const q = String(req.query.q ?? '').trim()
+  const exact = req.query.exact === '1'
   const customers = await prisma.customer.findMany({
     where: q
-      ? { OR: [{ name: { contains: q, mode: 'insensitive' } }, { phone: { contains: q } }] }
+      ? exact
+        ? { name: { equals: q, mode: 'insensitive' } }
+        : { OR: [{ name: { contains: q, mode: 'insensitive' } }, { phone: { contains: q } }] }
       : undefined,
-    select: summary,
+    select: searchSelect,
     orderBy: q ? { name: 'asc' } : { createdAt: 'desc' },
     take: 20,
   })
-  res.json(customers)
+  res.json(customers.map(toSearchRow))
 })
 
 customersRouter.post('/', async (req, res) => {

@@ -4,7 +4,7 @@ import { IconSearch, IconUserPlus, IconX } from '@tabler/icons-react'
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { api } from '../api.js'
-import { BalancePill, CustomerAvatar } from '../components/CustomerBits.jsx'
+import { BalancePill, CustomerAvatar, customerHint } from '../components/CustomerBits.jsx'
 import { Layout } from '../components/Layout.jsx'
 import { Stepper } from '../components/Stepper.jsx'
 import { useEntries } from '../entries.jsx'
@@ -87,6 +87,9 @@ export function Home() {
             </Card>
           ) : (
             <Stack gap="xs">
+              {new Set(results.map((c) => c.name.trim().toLowerCase())).size < results.length && (
+                <Text size="sm" c="yellow.8" fw={600}>Same name, different people — check the phone, note, or last visit before tapping.</Text>
+              )}
               {results.map((c) => (
                 <Card key={c.id} withBorder padding="sm" className="tap-row">
                   <Group wrap="nowrap" gap="sm">
@@ -94,11 +97,11 @@ export function Home() {
                       <Group wrap="nowrap" gap="sm">
                         <CustomerAvatar name={c.name} />
                         <Box style={{ minWidth: 0 }}>
-                          <Text fw={700} size="lg" truncate>{c.name}</Text>
-                          <Group gap="xs">
+                          <Group gap="xs" wrap="nowrap">
+                            <Text fw={700} size="lg" truncate>{c.name}</Text>
                             <BalancePill credits={c.credits} size="md" />
-                            {c.phone && <Text size="sm" c="dimmed">{c.phone}</Text>}
                           </Group>
+                          <Text size="sm" c="dimmed" lineClamp={1}>{customerHint(c)}</Text>
                         </Box>
                       </Group>
                     </UnstyledButton>
