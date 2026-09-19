@@ -32,6 +32,9 @@ npm test
 
 Useful: `cd server && npx prisma studio` opens a GUI for the database.
 
+Start fresh (deletes all customers and history, keeps logins/packs):
+`cd server && PRISMA_DATABASE_URL="<direct url>" node scripts/reset-customers.js --yes`
+
 ## Business rules
 
 - Packs are editable in the database (`Pack` table); seeded with
