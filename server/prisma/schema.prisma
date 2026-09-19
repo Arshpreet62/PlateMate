@@ -43,6 +43,9 @@ model Transaction {
   amount        Int?
   packName      String?
   note          String?
+  reversalOfId  Int?     @unique
+  reversalOf    Transaction?  @relation("Reversal", fields: [reversalOfId], references: [id])
+  reversedBy    Transaction?  @relation("Reversal")
   createdAt     DateTime @default(now())
 
   @@index([customerId, createdAt])

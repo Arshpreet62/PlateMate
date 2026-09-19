@@ -1,4 +1,18 @@
 html, body {
   margin: 0;
   overscroll-behavior-y: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  background: #faf6f1;
+  color: #1f1a17;
+}
+
+.tap-row:active {
+  background: #fff4e6;
+}
+
+.balance-pill {
+  font-variant-numeric: tabular-nums;
 }

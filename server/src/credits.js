@@ -87,3 +87,34 @@ export async function adjust(customerId, performedById, { delta, note }) {
     note: String(note).trim(),
   })
 }
+
+const UNDO_WINDOW_MS = 15 * 60 * 1000
+
+export async function undoEntry(transactionId, performedById) {
+  return prisma.$transaction(async (tx) => {
+    const original = await tx.transaction.findUnique({
+      where: { id: Number(transactionId) },
+      include: { reversedBy: true },
+    })
+    if (!original || original.type !== 'ENTRY') throw new CreditError(404, 'Entry not found')
+    if (original.reversedBy) throw new CreditError(409, 'Already undone')
+    if (Date.now() - original.createdAt.getTime() > UNDO_WINDOW_MS) throw new CreditError(409, 'Too late to undo — use Adjust instead')
+
+    const customer = await tx.customer.findUnique({ where: { id: original.customerId } })
+    const transaction = await tx.transaction.create({
+      data: {
+        customerId: original.customerId,
+        performedById,
+        type: 'ADJUST',
+        delta: -original.delta,
+        note: 'Undo entry',
+        reversalOfId: original.id,
+      },
+    })
+    const updated = await tx.customer.update({
+      where: { id: original.customerId },
+      data: { credits: customer.credits - original.delta },
+    })
+    return { customer: updated, transaction }
+  })
+}

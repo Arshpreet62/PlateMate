@@ -1,29 +1,53 @@
-import { Badge, Button, Card, Center, Group, Loader, Modal, NumberInput, Stack, Text, Textarea, TextInput, Title } from '@mantine/core'
+import { ActionIcon, Box, Button, Card, Center, Group, Loader, Menu, Modal, NumberInput, Stack, Text, Textarea, TextInput, Title } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
+import { IconAdjustments, IconDotsVertical, IconPencil, IconPlus, IconQrcode } from '@tabler/icons-react'
 import { useCallback, useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useSearchParams } from 'react-router-dom'
 import { api } from '../api.js'
 import { useAuth } from '../auth.jsx'
+import { BalancePill, CustomerAvatar } from '../components/CustomerBits.jsx'
 import { Layout } from '../components/Layout.jsx'
 import { QrModal } from '../components/QrModal.jsx'
 import { Stepper } from '../components/Stepper.jsx'
 import { TopupModal } from '../components/TopupModal.jsx'
+import { useEntries } from '../entries.jsx'
 import { useMoney } from '../settings.jsx'
 
-const typeLabel = { TOPUP: 'Added', ENTRY: 'Used', ADJUST: 'Adjusted' }
-const typeColor = { TOPUP: 'green', ENTRY: 'orange', ADJUST: 'blue' }
+const typeLabel = { TOPUP: 'Added', ENTRY: 'Ate', ADJUST: 'Adjusted' }
+const typeColor = { TOPUP: 'green', ENTRY: 'brand', ADJUST: 'blue' }
 
-function formatTime(iso) {
-  return new Date(iso).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })
+function dayLabel(iso) {
+  const d = new Date(iso)
+  const today = new Date()
+  const yesterday = new Date(); yesterday.setDate(today.getDate() - 1)
+  if (d.toDateString() === today.toDateString()) return 'Today'
+  if (d.toDateString() === yesterday.toDateString()) return 'Yesterday'
+  return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: d.getFullYear() !== today.getFullYear() ? 'numeric' : undefined })
+}
+
+function timeOf(iso) {
+  return new Date(iso).toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' })
+}
+
+function groupByDay(transactions) {
+  const groups = []
+  for (const t of transactions) {
+    const label = dayLabel(t.createdAt)
+    const last = groups[groups.length - 1]
+    if (last?.label === label) last.items.push(t)
+    else groups.push({ label, items: [t] })
+  }
+  return groups
 }
 
 export function Customer() {
   const { id } = useParams()
+  const [params, setParams] = useSearchParams()
   const { user } = useAuth()
   const money = useMoney()
   const [customer, setCustomer] = useState(null)
   const [error, setError] = useState(null)
-  const [modal, setModal] = useState(null)
+  const [modal, setModal] = useState(params.get('topup') ? 'topup' : null)
   const [count, setCount] = useState(1)
   const [busy, setBusy] = useState(false)
   const [adjust, setAdjust] = useState({ delta: 1, note: '' })
@@ -35,12 +59,17 @@ export function Customer() {
 
   useEffect(load, [load])
 
+  const closeModal = () => {
+    setModal(null)
+    if (params.get('topup')) setParams({}, { replace: true })
+  }
+
   const run = async (fn, successMessage) => {
     setBusy(true)
     try {
       const result = await fn()
       notifications.show({ color: 'green', message: successMessage(result) })
-      setModal(null)
+      closeModal()
       load()
     } catch (err) {
       notifications.show({ color: 'red', message: err.message })
@@ -49,143 +78,153 @@ export function Customer() {
     }
   }
 
-  const useEntries = () =>
-    run(
-      () => api(`/customers/${id}/entry`, { method: 'POST', body: { count } }),
-      (r) => `${count} ${count === 1 ? 'entry' : 'entries'} used. ${r.customer.credits} left.`,
-    )
+  const use = async () => {
+    setBusy(true)
+    await useEntries(customer, count, { onChange: load })
+    setCount(1)
+    setBusy(false)
+  }
 
   const submitAdjust = () =>
-    run(
-      () => api(`/customers/${id}/adjust`, { method: 'POST', body: adjust }),
-      (r) => `Balance is now ${r.customer.credits}.`,
-    )
+    run(() => api(`/customers/${id}/adjust`, { method: 'POST', body: adjust }), (r) => `Balance is now ${r.customer.credits}`)
 
   const submitEdit = () =>
-    run(
-      () => api(`/customers/${id}`, { method: 'PATCH', body: edit }),
-      () => 'Details saved.',
-    )
+    run(() => api(`/customers/${id}`, { method: 'PATCH', body: edit }), () => 'Details saved')
 
   if (error) {
     return (
-      <Layout>
+      <Layout back>
         <Text c="red" ta="center" py="xl">{error}</Text>
       </Layout>
     )
   }
   if (!customer) {
     return (
-      <Layout>
+      <Layout back>
         <Center py="xl"><Loader /></Center>
       </Layout>
     )
   }
 
-  const canUse = customer.credits >= count
+  const canUse = customer.credits >= count && count >= 1
+
+  const menu = (
+    <Menu position="bottom-end" shadow="md" width={220}>
+      <Menu.Target>
+        <ActionIcon variant="light" color="gray" size="lg" aria-label="Options">
+          <IconDotsVertical size={22} />
+        </ActionIcon>
+      </Menu.Target>
+      <Menu.Dropdown>
+        <Menu.Item
+          leftSection={<IconPencil size={18} />}
+          onClick={() => {
+            setEdit({ name: customer.name, phone: customer.phone ?? '', notes: customer.notes ?? '' })
+            setModal('edit')
+          }}
+        >
+          Edit details
+        </Menu.Item>
+        {user.role === 'OWNER' && (
+          <Menu.Item leftSection={<IconAdjustments size={18} />} onClick={() => { setAdjust({ delta: 1, note: '' }); setModal('adjust') }}>
+            Adjust balance
+          </Menu.Item>
+        )}
+      </Menu.Dropdown>
+    </Menu>
+  )
 
   return (
-    <Layout title={customer.name}>
-      <Stack>
-        <Card withBorder radius="lg" padding="lg">
-          <Group justify="space-between" align="flex-start" wrap="nowrap">
-            <div>
-              <Title order={3}>{customer.name}</Title>
+    <Layout title={customer.name} back action={menu}>
+      <Stack gap="md">
+        <Card withBorder padding="lg">
+          <Group wrap="nowrap" align="center" gap="md">
+            <CustomerAvatar name={customer.name} size={56} />
+            <Box style={{ flex: 1, minWidth: 0 }}>
+              <Title order={3} lineClamp={2}>{customer.name}</Title>
               <Text c="dimmed">{customer.phone || 'No phone yet'}</Text>
-              {customer.notes && <Text size="sm" mt="xs">{customer.notes}</Text>}
-            </div>
-            <Button
-              variant="subtle"
-              size="sm"
-              onClick={() => {
-                setEdit({ name: customer.name, phone: customer.phone ?? '', notes: customer.notes ?? '' })
-                setModal('edit')
-              }}
-            >
-              Edit
-            </Button>
+            </Box>
+            <BalancePill credits={customer.credits} size="xl" />
           </Group>
-          <Center mt="md">
-            <Stack gap={0} align="center">
-              <Text fw={800} style={{ fontSize: 64, lineHeight: 1 }} c={customer.credits > 0 ? 'green' : 'red'}>
-                {customer.credits}
-              </Text>
-              <Text c="dimmed">entries left</Text>
-            </Stack>
-          </Center>
+          {(customer.notes || customer.credits <= 2) && (
+            <Group justify="space-between" mt="sm">
+              <Text size="sm" c="dimmed">{customer.notes}</Text>
+              {customer.credits <= 2 && (
+                <Text size="sm" c={customer.credits === 0 ? 'red' : 'yellow.8'} fw={600}>
+                  {customer.credits === 0 ? 'No entries left' : 'Running low'}
+                </Text>
+              )}
+            </Group>
+          )}
         </Card>
 
-        <Button size="xl" onClick={() => { setCount(1); setModal('use') }} disabled={customer.credits < 1}>
-          Use entry
-        </Button>
-        <Group grow>
-          <Button variant="light" onClick={() => setModal('topup')}>Add entries</Button>
-          <Button variant="light" color="gray" onClick={() => setModal('qr')}>Show QR</Button>
-        </Group>
-        {user.role === 'OWNER' && (
-          <Button variant="subtle" color="blue" size="md" onClick={() => { setAdjust({ delta: 1, note: '' }); setModal('adjust') }}>
-            Adjust balance (fix a mistake)
+        {customer.credits > 0 ? (
+          <Card withBorder padding="md">
+            <Stack gap="sm">
+              <Text fw={600} ta="center" c="dimmed">How many people are eating?</Text>
+              <Stepper value={count} onChange={setCount} min={1} max={customer.credits} />
+              <Button size="xl" loading={busy} disabled={!canUse} onClick={use}>
+                Use {count} {count === 1 ? 'entry' : 'entries'}
+              </Button>
+            </Stack>
+          </Card>
+        ) : (
+          <Button size="xl" leftSection={<IconPlus size={22} />} onClick={() => setModal('topup')}>
+            Add a pack
           </Button>
         )}
 
-        <Title order={5} mt="md">History</Title>
-        {customer.transactions.length === 0 ? (
-          <Text c="dimmed" size="sm">Nothing yet.</Text>
-        ) : (
-          <Stack gap="xs">
-            {customer.transactions.map((t) => (
-              <Card key={t.id} withBorder padding="sm" radius="md">
-                <Group justify="space-between" wrap="nowrap">
-                  <div>
-                    <Group gap="xs">
-                      <Badge color={typeColor[t.type]} variant="light">{typeLabel[t.type]}</Badge>
-                      <Text fw={600}>{t.delta > 0 ? '+' : ''}{t.delta}</Text>
-                      {t.packName && <Text size="sm" c="dimmed">{t.packName}</Text>}
+        <Group grow>
+          <Button variant="light" leftSection={<IconPlus size={20} />} onClick={() => setModal('topup')}>Add entries</Button>
+          <Button variant="light" color="gray" leftSection={<IconQrcode size={20} />} onClick={() => setModal('qr')}>QR code</Button>
+        </Group>
+
+        <Box>
+          <Text fw={700} size="lg" mb="xs">History</Text>
+          {customer.transactions.length === 0 ? (
+            <Text c="dimmed" size="sm">Nothing yet.</Text>
+          ) : (
+            groupByDay(customer.transactions).map((g) => (
+              <Box key={g.label} mb="sm">
+                <Text size="xs" c="dimmed" fw={600} tt="uppercase" mb={4}>{g.label}</Text>
+                <Card withBorder padding={0}>
+                  {g.items.map((t, i) => (
+                    <Group key={t.id} wrap="nowrap" px="md" py="sm" style={{ borderTop: i ? '1px solid #f0ebe4' : undefined }}>
+                      <Text fw={800} w={44} c={typeColor[t.type]} ta="right" className="balance-pill">
+                        {t.delta > 0 ? '+' : ''}{t.delta}
+                      </Text>
+                      <Box style={{ flex: 1, minWidth: 0 }}>
+                        <Text fw={600} size="sm">
+                          {typeLabel[t.type]}{t.packName ? ` · ${t.packName}` : ''}
+                        </Text>
+                        <Text size="xs" c="dimmed" truncate>
+                          {timeOf(t.createdAt)} · {t.performedBy.name}{t.note ? ` · ${t.note}` : ''}
+                        </Text>
+                      </Box>
+                      {t.amount != null && <Text fw={600} size="sm">{money(t.amount)}</Text>}
                     </Group>
-                    <Text size="xs" c="dimmed">
-                      {formatTime(t.createdAt)} · {t.performedBy.name}{t.note ? ` · ${t.note}` : ''}
-                    </Text>
-                  </div>
-                  {t.amount != null && <Text fw={600}>{money(t.amount)}</Text>}
-                </Group>
-              </Card>
-            ))}
-          </Stack>
-        )}
+                  ))}
+                </Card>
+              </Box>
+            ))
+          )}
+        </Box>
       </Stack>
 
-      <Modal opened={modal === 'use'} onClose={() => setModal(null)} title="How many people?" centered>
+      <TopupModal opened={modal === 'topup'} onClose={closeModal} customer={customer} onDone={load} />
+
+      <QrModal opened={modal === 'qr'} onClose={closeModal} customer={customer} onRegenerated={(qr) => setCustomer({ ...customer, qr })} />
+
+      <Modal opened={modal === 'adjust'} onClose={closeModal} title="Adjust balance">
         <Stack>
-          <Stepper value={count} onChange={setCount} max={Math.max(1, customer.credits)} />
-          {!canUse && <Text c="red" ta="center" size="sm">Only {customer.credits} left</Text>}
-          <Button size="xl" loading={busy} disabled={!canUse} onClick={useEntries}>
-            Confirm — use {count} {count === 1 ? 'entry' : 'entries'}
-          </Button>
-          <Text c="dimmed" size="sm" ta="center">{customer.name} will have {customer.credits - count} left</Text>
-        </Stack>
-      </Modal>
-
-      <TopupModal opened={modal === 'topup'} onClose={() => setModal(null)} customer={customer} onDone={load} />
-
-      <QrModal
-        opened={modal === 'qr'}
-        onClose={() => setModal(null)}
-        customer={customer}
-        onRegenerated={(qr) => setCustomer({ ...customer, qr })}
-      />
-
-      <Modal opened={modal === 'adjust'} onClose={() => setModal(null)} title="Adjust balance" centered>
-        <Stack>
-          <Text size="sm" c="dimmed">Use this to fix mistakes. Positive adds entries, negative removes them.</Text>
+          <Text size="sm" c="dimmed">For fixing mistakes. Positive adds entries, negative removes them.</Text>
           <NumberInput label="Change by" allowDecimal={false} value={adjust.delta} onChange={(v) => setAdjust({ ...adjust, delta: Number(v) || 0 })} />
           <TextInput label="Reason (required)" value={adjust.note} onChange={(e) => setAdjust({ ...adjust, note: e.currentTarget.value })} />
-          <Button loading={busy} onClick={submitAdjust} disabled={!adjust.delta || !adjust.note.trim()} color="blue">
-            Apply
-          </Button>
+          <Button loading={busy} onClick={submitAdjust} disabled={!adjust.delta || !adjust.note.trim()} color="blue">Apply</Button>
         </Stack>
       </Modal>
 
-      <Modal opened={modal === 'edit'} onClose={() => setModal(null)} title="Edit details" centered>
+      <Modal opened={modal === 'edit'} onClose={closeModal} title="Edit details">
         <Stack>
           <TextInput label="Name" value={edit.name} onChange={(e) => setEdit({ ...edit, name: e.currentTarget.value })} />
           <TextInput label="Phone" type="tel" value={edit.phone} onChange={(e) => setEdit({ ...edit, phone: e.currentTarget.value })} />

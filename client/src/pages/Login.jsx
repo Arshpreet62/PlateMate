@@ -1,6 +1,7 @@
-import { Button, Container, Paper, PasswordInput, Stack, TextInput, Title } from '@mantine/core'
+import { Box, Button, Center, Container, PasswordInput, Stack, Text, TextInput, ThemeIcon, Title } from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { notifications } from '@mantine/notifications'
+import { IconToolsKitchen2 } from '@tabler/icons-react'
 import { useState } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth.jsx'
@@ -27,17 +28,25 @@ export function Login() {
   })
 
   return (
-    <Container size="xs" pt="15vh">
-      <Paper withBorder p="xl" radius="lg">
+    <Box mih="100dvh" bg="#faf6f1">
+      <Container size="xs" pt="12vh" px="lg">
         <form onSubmit={submit}>
-          <Stack>
-            <Title order={2} ta="center">Buffet Pass</Title>
+          <Stack gap="lg">
+            <Center>
+              <Stack align="center" gap="xs">
+                <ThemeIcon size={72} radius="xl" variant="light">
+                  <IconToolsKitchen2 size={40} />
+                </ThemeIcon>
+                <Title order={1}>Buffet Pass</Title>
+                <Text c="dimmed">Sign in to open the counter</Text>
+              </Stack>
+            </Center>
             <TextInput label="Username" autoCapitalize="none" autoComplete="username" {...form.getInputProps('username')} />
             <PasswordInput label="Password" autoComplete="current-password" {...form.getInputProps('password')} />
-            <Button type="submit" loading={loading} fullWidth>Log in</Button>
+            <Button type="submit" size="xl" loading={loading}>Log in</Button>
           </Stack>
         </form>
-      </Paper>
-    </Container>
+      </Container>
+    </Box>
   )
 }

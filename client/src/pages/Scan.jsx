@@ -1,11 +1,12 @@
-import { Badge, Button, Card, Group, Stack, Text, Title } from '@mantine/core'
-import { notifications } from '@mantine/notifications'
+import { Box, Button, Card, Group, Stack, Text, Title } from '@mantine/core'
 import { Html5Qrcode } from 'html5-qrcode'
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../api.js'
+import { BalancePill, CustomerAvatar } from '../components/CustomerBits.jsx'
 import { Layout } from '../components/Layout.jsx'
 import { Stepper } from '../components/Stepper.jsx'
+import { useEntries as deduct, vibrate } from '../entries.jsx'
 
 const REGION_ID = 'qr-reader'
 
@@ -46,9 +47,11 @@ export function Scan() {
           setPhase('checking')
           try {
             const found = await api('/scan', { method: 'POST', body: { code: decoded } })
+            vibrate()
             setCustomer(found)
             setPhase('found')
           } catch (err) {
+            vibrate([60, 40, 60])
             setMessage(err.status === 404 ? 'Not a valid customer code' : err.message)
             setPhase('invalid')
           }
@@ -76,25 +79,19 @@ export function Scan() {
 
   const useEntries = async () => {
     setBusy(true)
-    try {
-      const r = await api(`/customers/${customer.id}/entry`, { method: 'POST', body: { count } })
-      notifications.show({ color: 'green', message: `${count} ${count === 1 ? 'entry' : 'entries'} used. ${r.customer.credits} left.` })
-      setCustomer({ ...customer, credits: r.customer.credits })
-    } catch (err) {
-      notifications.show({ color: 'red', message: err.message })
-    } finally {
-      setBusy(false)
-    }
+    await deduct(customer, count, { onChange: (r) => setCustomer((c) => ({ ...c, credits: r.customer.credits })) })
+    setCount(1)
+    setBusy(false)
   }
 
   const showCamera = phase === 'starting' || phase === 'scanning'
 
   return (
-    <Layout title="Scan QR">
+    <Layout title="Scan QR code">
       <Stack>
-        <div
+        <Box
           id={REGION_ID}
-          style={{ width: '100%', borderRadius: 12, overflow: 'hidden', display: showCamera ? 'block' : 'none' }}
+          style={{ width: '100%', borderRadius: 16, overflow: 'hidden', background: '#000', display: showCamera ? 'block' : 'none' }}
         />
         {phase === 'starting' && <Text ta="center" c="dimmed">Starting camera…</Text>}
         {phase === 'scanning' && <Text ta="center" c="dimmed">Point the camera at the customer's QR code</Text>}
@@ -114,14 +111,13 @@ export function Scan() {
         {phase === 'found' && customer && (
           <Card withBorder radius="lg" padding="lg">
             <Stack>
-              <Group justify="space-between" align="flex-start">
-                <div>
-                  <Title order={3}>{customer.name}</Title>
+              <Group wrap="nowrap" gap="md">
+                <CustomerAvatar name={customer.name} size={56} />
+                <Box style={{ flex: 1, minWidth: 0 }}>
+                  <Title order={3} lineClamp={2}>{customer.name}</Title>
                   <Text c="dimmed">{customer.phone || 'No phone yet'}</Text>
-                </div>
-                <Badge size="xl" color={customer.credits > 0 ? 'green' : 'red'} variant="light">
-                  {customer.credits} left
-                </Badge>
+                </Box>
+                <BalancePill credits={customer.credits} size="xl" />
               </Group>
               <Text size="sm" c="dimmed" ta="center">Check this is the right person, then choose how many are eating.</Text>
               <Stepper value={count} onChange={setCount} max={Math.max(1, customer.credits)} />

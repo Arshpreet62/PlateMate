@@ -68,6 +68,7 @@ describe('today stats', () => {
     await owner.post(`/api/customers/${customer.id}/topup`).send({ packId: 1 })
     await owner.post(`/api/customers/${customer.id}/entry`).send({ count: 2 })
     const res = await owner.get('/api/stats/today')
-    expect(res.body).toMatchObject({ entries: 2, money: 450 })
+    expect(res.body.entries).toBe(2)
+    expect(res.body.visits).toHaveLength(1)
   })
 })

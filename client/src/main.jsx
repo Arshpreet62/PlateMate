@@ -14,7 +14,7 @@ import { theme } from './theme.js'
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <MantineProvider theme={theme}>
-      <Notifications position="top-center" />
+      <Notifications position="bottom-center" limit={1} autoClose={3500} style={{ bottom: 'calc(76px + env(safe-area-inset-bottom))' }} />
       <ModalsProvider>
         <BrowserRouter>
           <AuthProvider>

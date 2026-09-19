@@ -71,5 +71,6 @@ Repeat step 3's `migrate deploy` whenever a new version adds a migration.
 ## Roadmap
 
 - v0.1 — customers, packs, entries, history, login
-- v0.2 — signed QR per customer + camera scanner, optional phone (this version)
+- v0.2 — signed QR per customer + camera scanner, optional phone
+- v0.3 — counter redesign: one-tap deduct with undo, today's visits, bottom nav, no money on shared screens (this version)
 - v0.3 — owner tools: staff accounts, pack/price editing, CSV export

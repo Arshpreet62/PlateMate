@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import { requireOwner } from './auth.js'
-import { adjust, topup, useEntries } from './credits.js'
+import { adjust, topup, undoEntry, useEntries } from './credits.js'
 import prisma from './db.js'
 import { qrCode } from './qr.js'
 
@@ -72,6 +72,11 @@ customersRouter.post('/:id/topup', async (req, res) => {
 
 customersRouter.post('/:id/entry', async (req, res) => {
   const result = await useEntries(req.params.id, req.user.id, req.body ?? {})
+  res.json(result)
+})
+
+customersRouter.post('/:id/undo/:transactionId', async (req, res) => {
+  const result = await undoEntry(req.params.transactionId, req.user.id)
   res.json(result)
 })
 

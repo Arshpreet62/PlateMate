@@ -25,9 +25,22 @@ export function startOfToday(timeZone = process.env.APP_TZ || 'Asia/Kolkata', no
 
 statsRouter.get('/today', async (req, res) => {
   const since = startOfToday()
-  const [entries, money] = await Promise.all([
-    prisma.transaction.aggregate({ where: { type: 'ENTRY', createdAt: { gte: since } }, _sum: { delta: true } }),
-    prisma.transaction.aggregate({ where: { type: 'TOPUP', createdAt: { gte: since } }, _sum: { amount: true } }),
-  ])
-  res.json({ entries: -(entries._sum.delta ?? 0), money: money._sum.amount ?? 0, since })
+  const visits = await prisma.transaction.findMany({
+    where: { type: 'ENTRY', createdAt: { gte: since }, reversedBy: null },
+    orderBy: { createdAt: 'desc' },
+    take: 100,
+    select: {
+      id: true,
+      delta: true,
+      createdAt: true,
+      customer: { select: { id: true, name: true, credits: true } },
+    },
+  })
+  const entries = visits.reduce((sum, v) => sum - v.delta, 0)
+  const body = { entries, visits, since }
+  if (req.user.role === 'OWNER' && req.query.money === '1') {
+    const money = await prisma.transaction.aggregate({ where: { type: 'TOPUP', createdAt: { gte: since } }, _sum: { amount: true } })
+    body.money = money._sum.amount ?? 0
+  }
+  res.json(body)
 })

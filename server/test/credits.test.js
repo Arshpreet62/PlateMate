@@ -89,3 +89,33 @@ describe('adjust', () => {
     expect((await owner.post(`/api/customers/${customer.id}/adjust`).send({ delta: -5, note: 'too much' })).status).toBe(409)
   })
 })
+
+describe('undo', () => {
+  it('reverses a recent entry once, and hides it from today', async () => {
+    const agent = await ownerAgent()
+    const customer = await createCustomer(agent)
+    await agent.post(`/api/customers/${customer.id}/topup`).send({ packId: 1 })
+    const entry = await agent.post(`/api/customers/${customer.id}/entry`).send({ count: 2 })
+    const tid = entry.body.transaction.id
+    expect((await agent.get('/api/stats/today')).body.entries).toBe(2)
+
+    const undo = await agent.post(`/api/customers/${customer.id}/undo/${tid}`)
+    expect(undo.status).toBe(200)
+    expect(undo.body.customer.credits).toBe(5)
+    expect(undo.body.transaction).toMatchObject({ type: 'ADJUST', delta: 2, reversalOfId: tid })
+
+    expect((await agent.post(`/api/customers/${customer.id}/undo/${tid}`)).status).toBe(409)
+    expect((await agent.get('/api/stats/today')).body.entries).toBe(0)
+  })
+
+  it('does not expose money to staff', async () => {
+    const owner = await ownerAgent()
+    const customer = await createCustomer(owner)
+    await owner.post(`/api/customers/${customer.id}/topup`).send({ packId: 1 })
+    await createUser({ username: 'ravi' })
+    const staff = await loginAs('ravi')
+    expect((await staff.get('/api/stats/today?money=1')).body.money).toBeUndefined()
+    expect((await owner.get('/api/stats/today')).body.money).toBeUndefined()
+    expect((await owner.get('/api/stats/today?money=1')).body.money).toBe(450)
+  })
+})
