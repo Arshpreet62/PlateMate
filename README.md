@@ -50,7 +50,7 @@ Useful: `cd server && npx prisma studio` opens a GUI for the database.
 2. **Vercel**: import this repo. Set environment variables:
    - `DATABASE_URL` — Neon pooled URL
    - `SESSION_SECRET`, `QR_SECRET` — `openssl rand -base64 32` each
-   - `TZ` — e.g. `Asia/Kolkata`
+   - `APP_TZ` — e.g. `Asia/Kolkata` (`TZ` is reserved on Vercel)
    Build settings come from `vercel.json`.
 3. **Migrate + seed** the production DB from your machine (uses the direct
    URL):

@@ -16,7 +16,7 @@ function tzOffsetMinutes(date, timeZone) {
   return (asUtc - date.getTime()) / 60000
 }
 
-export function startOfToday(timeZone = process.env.TZ || 'Asia/Kolkata', now = new Date()) {
+export function startOfToday(timeZone = process.env.APP_TZ || 'Asia/Kolkata', now = new Date()) {
   const [y, m, d] = new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit' })
     .format(now).split('-').map(Number)
   const midnightGuess = Date.UTC(y, m - 1, d)
