@@ -10,7 +10,8 @@
     "postinstall": "prisma generate",
     "migrate": "prisma migrate deploy",
     "seed": "prisma db seed",
-    "generate": "prisma generate"
+    "generate": "prisma generate",
+    "bundle": "esbuild src/app.js --bundle --platform=node --format=esm --target=node22 --outfile=../api/_app.mjs --external:pg-native --banner:js=\"import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);\" --log-level=warning"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.10.0",
@@ -23,6 +24,7 @@
     "pg": "^8.23.0"
   },
   "devDependencies": {
+    "esbuild": "^0.28.2",
     "nodemon": "^3.1.10",
     "prisma": "^7.10.0",
     "supertest": "^7.2.2",

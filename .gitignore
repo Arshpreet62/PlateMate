@@ -8,3 +8,4 @@ dist/
 server/src/generated/
 .claude/
 .neon
+api/_app.mjs

@@ -1,3 +1,3 @@
-import { createApp } from '../server/src/app.js'
+import { createApp } from './_app.mjs'
 
 export default createApp()
