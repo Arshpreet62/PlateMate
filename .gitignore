@@ -7,3 +7,4 @@ dist/
 .vercel
 server/src/generated/
 .claude/
+.neon
