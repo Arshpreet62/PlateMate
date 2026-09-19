@@ -1,3 +1,11 @@
+:root {
+  --bg: #f6f1ea;
+  --ink: #1f1a17;
+  --brand-a: #ff7a1a;
+  --brand-b: #e8590c;
+  --nav-h: 64px;
+}
+
 html, body {
   margin: 0;
   overscroll-behavior-y: none;
@@ -5,21 +13,90 @@ html, body {
 }
 
 body {
-  background: #faf6f1;
-  color: #1f1a17;
+  background: var(--bg);
+  color: var(--ink);
+}
+
+/* Cards: borderless, soft elevation */
+.mantine-Card-root {
+  border: 1px solid rgba(31, 26, 23, 0.04) !important;
+  box-shadow: 0 1px 2px rgba(31, 26, 23, 0.04), 0 6px 20px rgba(31, 26, 23, 0.05);
+  background: #fff;
 }
 
 .tap-row:active {
-  background: #fff4e6;
+  transform: scale(0.99);
+  background: #fff7ef;
+}
+
+/* Primary buttons get the brand gradient */
+.mantine-Button-root[data-variant='filled'] {
+  background-image: linear-gradient(135deg, var(--brand-a), var(--brand-b));
+  box-shadow: 0 6px 18px rgba(232, 89, 12, 0.28);
+}
+.mantine-Button-root[data-variant='filled']:active {
+  transform: translateY(1px);
+  box-shadow: 0 3px 10px rgba(232, 89, 12, 0.25);
+}
+.mantine-Button-root[data-variant='filled']:disabled,
+.mantine-Button-root[data-variant='filled'][data-disabled] {
+  background-image: none;
+  box-shadow: none;
+}
+
+/* Search pill */
+.search-pill .mantine-Input-input {
+  background: #fff;
+  border: 1px solid rgba(31, 26, 23, 0.06);
+  box-shadow: 0 8px 24px rgba(31, 26, 23, 0.08);
+}
+
+/* Hero card on the customer page */
+.hero {
+  background: linear-gradient(135deg, #ff8a2a 0%, #e8590c 60%, #c2410c 100%);
+  color: #fff;
+  border-radius: 24px;
+  padding: 20px;
+  box-shadow: 0 14px 32px rgba(232, 89, 12, 0.3);
+}
+.hero .dim { color: rgba(255, 255, 255, 0.82); }
+.hero[data-finished] {
+  background: linear-gradient(135deg, #8a817a 0%, #6b6360 100%);
+  box-shadow: 0 14px 32px rgba(31, 26, 23, 0.18);
 }
 
 .balance-pill {
   font-variant-numeric: tabular-nums;
 }
 
-/* Keep bottom toasts above the fixed bottom nav */
+/* Sticky header with blur */
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: rgba(246, 241, 234, 0.85);
+  backdrop-filter: saturate(160%) blur(12px);
+  -webkit-backdrop-filter: saturate(160%) blur(12px);
+}
+
+/* Floating bottom nav */
+.bottom-nav {
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: calc(10px + env(safe-area-inset-bottom));
+  height: var(--nav-h);
+  z-index: 20;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-radius: 24px;
+  box-shadow: 0 10px 30px rgba(31, 26, 23, 0.14);
+}
+
+/* Keep bottom toasts above the floating nav */
 .mantine-Notifications-root[data-position='bottom-center'] {
-  bottom: calc(76px + env(safe-area-inset-bottom));
+  bottom: calc(var(--nav-h) + 24px + env(safe-area-inset-bottom));
 }
 
 /* Empty toast containers must never intercept taps */
@@ -34,4 +111,53 @@ body {
 .masked-input input {
   -webkit-text-security: disc;
   text-security: disc;
+}
+
+/* Plan cards */
+.plan-card {
+  width: 100%;
+  border-radius: 18px;
+  border: 2px solid rgba(31, 26, 23, 0.08);
+  background: #fff;
+  transition: border-color 120ms, background 120ms;
+}
+.plan-card[data-selected] {
+  border-color: var(--brand-b);
+  background: #fff5ec;
+}
+.plan-check {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid rgba(31, 26, 23, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  flex: none;
+}
+.plan-card[data-selected] .plan-check {
+  border-color: var(--brand-b);
+  background: var(--brand-b);
+}
+
+/* Offline: block the buttons that would fail */
+[data-offline] .mantine-Button-root[data-variant='filled'] {
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+/* Offline strip */
+.offline-strip {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 30;
+  background: #1f1a17;
+  color: #fff;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 8px 12px;
 }

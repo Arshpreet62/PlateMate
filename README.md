@@ -41,7 +41,15 @@ Start fresh (deletes all customers and history, keeps logins/packs):
   **Week plan** (5 entries, 450) and **Monthly pack** (22 entries, 1760).
 - Custom top-ups: 90 per entry below 22 entries, 80 per entry from 22 up
   (`Setting` table). Staff can override the amount (e.g. a discount).
-- Entries can be used several at a time; refused if the balance is too low.
+- Entries can be used several at a time; refused if the balance is too low
+  (atomic — a double tap cannot deduct twice). Each entry can be undone
+  within 15 minutes from the Today list.
+- New customer = name → pick a plan → QR pass, in one guided flow. A plan is
+  required; "other number of entries" is tucked behind a link.
+- Customer names are unique (case-insensitive, enforced by the database) —
+  staff add a surname or nickname to tell people apart.
+- No money is shown on the device except plan prices when selling. Amounts
+  are stored and returned only to the OWNER role.
 - Phone number is optional and can be added later from the customer's page.
 - Every customer has a signed QR code (Show QR on their page). Staff scan it
   from the home screen; forged or replaced codes are rejected.
@@ -75,5 +83,6 @@ Repeat step 3's `migrate deploy` whenever a new version adds a migration.
 
 - v0.1 — customers, packs, entries, history, login
 - v0.2 — signed QR per customer + camera scanner, optional phone
-- v0.3 — counter redesign: one-tap deduct with undo, today's visits, bottom nav, no money on shared screens (this version)
+- v0.3 — counter redesign: one-tap deduct with undo, today's visits, bottom nav, no money on shared screens
+- v0.4 — creation wizard (name → plan → QR), atomic balances, DB-unique names, undo on the Today list, offline banner (this version)
 - v0.3 — owner tools: staff accounts, pack/price editing, CSV export

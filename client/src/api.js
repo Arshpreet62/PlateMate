@@ -6,12 +6,17 @@ export class ApiError extends Error {
 }
 
 export async function api(path, { method = 'GET', body } = {}) {
-  const res = await fetch(`/api${path}`, {
-    method,
-    credentials: 'include',
-    headers: body ? { 'Content-Type': 'application/json' } : undefined,
-    body: body ? JSON.stringify(body) : undefined,
-  })
+  let res
+  try {
+    res = await fetch(`/api${path}`, {
+      method,
+      credentials: 'include',
+      headers: body ? { 'Content-Type': 'application/json' } : undefined,
+      body: body ? JSON.stringify(body) : undefined,
+    })
+  } catch {
+    throw new ApiError(0, navigator.onLine ? 'Could not reach the server — try again' : 'No internet connection')
+  }
   const data = await res.json().catch(() => ({}))
   if (!res.ok) {
     if (res.status === 401 && !path.startsWith('/login') && !path.startsWith('/me')) {

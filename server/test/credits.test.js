@@ -119,3 +119,55 @@ describe('undo', () => {
     expect((await owner.get('/api/stats/today?money=1')).body.money).toBe(450)
   })
 })
+
+describe('hardening', () => {
+  it('two concurrent deductions on a balance of 1 let exactly one through', async () => {
+    const agent = await ownerAgent()
+    const customer = await createCustomer(agent)
+    await agent.post(`/api/customers/${customer.id}/topup`).send({ credits: 1 })
+    const results = await Promise.all([
+      agent.post(`/api/customers/${customer.id}/entry`).send({}),
+      agent.post(`/api/customers/${customer.id}/entry`).send({}),
+    ])
+    const statuses = results.map((r) => r.status).sort()
+    expect(statuses).toEqual([200, 409])
+    const detail = await agent.get(`/api/customers/${customer.id}`)
+    expect(detail.body.credits).toBe(0)
+    expect(detail.body.transactions.filter((t) => t.type === 'ENTRY')).toHaveLength(1)
+  })
+
+  it('two concurrent creates with the same name yield one customer', async () => {
+    const agent = await ownerAgent()
+    const results = await Promise.all([
+      agent.post('/api/customers').send({ name: 'Race Kumar' }),
+      agent.post('/api/customers').send({ name: 'race kumar' }),
+    ])
+    expect(results.map((r) => r.status).sort()).toEqual([201, 409])
+    expect((await agent.get('/api/customers?q=race&exact=0')).body).toHaveLength(1)
+  })
+
+  it('requires a note when the amount differs from the standard price', async () => {
+    const agent = await ownerAgent()
+    const customer = await createCustomer(agent)
+    expect((await agent.post(`/api/customers/${customer.id}/topup`).send({ packId: 1, amount: 400 })).status).toBe(400)
+    expect((await agent.post(`/api/customers/${customer.id}/topup`).send({ packId: 1, amount: 450 })).status).toBe(200)
+    expect((await agent.post(`/api/customers/${customer.id}/topup`).send({ packId: 1, amount: 400, note: 'discount' })).status).toBe(200)
+  })
+
+  it('hides amounts from staff but not from the owner', async () => {
+    const owner = await ownerAgent()
+    const customer = await createCustomer(owner)
+    await owner.post(`/api/customers/${customer.id}/topup`).send({ packId: 1 })
+    expect((await owner.get(`/api/customers/${customer.id}`)).body.transactions[0].amount).toBe(450)
+    await createUser({ username: 'ravi' })
+    const staff = await loginAs('ravi')
+    expect((await staff.get(`/api/customers/${customer.id}`)).body.transactions[0].amount).toBeUndefined()
+  })
+
+  it('normalises whitespace in names and matches phones typed with spaces', async () => {
+    const agent = await ownerAgent()
+    const c = await createCustomer(agent, { name: '  Asha   Rao ', phone: '98765 43210' })
+    expect(c.name).toBe('Asha Rao')
+    expect((await agent.get('/api/customers?q=98765%2043')).body[0].id).toBe(c.id)
+  })
+})

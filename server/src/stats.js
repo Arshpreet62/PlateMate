@@ -1,4 +1,5 @@
 import { Router } from 'express'
+import { UNDO_WINDOW_MS } from './credits.js'
 import prisma from './db.js'
 
 export const statsRouter = Router()
@@ -37,7 +38,12 @@ statsRouter.get('/today', async (req, res) => {
     },
   })
   const entries = visits.reduce((sum, v) => sum - v.delta, 0)
-  const body = { entries, visits, since }
+  const now = Date.now()
+  const body = {
+    entries,
+    visits: visits.map((v) => ({ ...v, canUndo: now - v.createdAt.getTime() < UNDO_WINDOW_MS })),
+    since,
+  }
   if (req.user.role === 'OWNER' && req.query.money === '1') {
     const money = await prisma.transaction.aggregate({ where: { type: 'TOPUP', createdAt: { gte: since } }, _sum: { amount: true } })
     body.money = money._sum.amount ?? 0

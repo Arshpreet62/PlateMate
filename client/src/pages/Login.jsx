@@ -29,7 +29,7 @@ export function Login() {
   }
 
   return (
-    <Box mih="100dvh" bg="#faf6f1">
+    <Box mih="100dvh" style={{ background: 'radial-gradient(120% 60% at 50% -10%, #ffd8a8 0%, var(--bg) 60%)' }}>
       <Container size="xs" pt="12vh" px="lg">
         {/* Deliberately not a <form> with a password field: Chrome's "Save password?"
             sheet on Android can sit over the page and block every tap on a shared device. */}

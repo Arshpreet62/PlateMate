@@ -17,10 +17,10 @@ export function CustomerAvatar({ name, size = 44 }) {
 }
 
 export function BalancePill({ credits, size = 'lg' }) {
-  const color = credits <= 0 ? 'red' : credits <= 2 ? 'yellow' : 'green'
+  const color = credits <= 0 ? 'gray' : credits <= 2 ? 'yellow' : 'green'
   return (
     <Badge className="balance-pill" size={size} color={color} variant="light" tt="none" fw={700}>
-      {credits} left
+      {credits <= 0 ? 'Plan finished' : `${credits} left`}
     </Badge>
   )
 }

@@ -18,7 +18,7 @@ async function undo(toastId, customer, transactionId, onChange) {
 }
 
 // Deducts entries and shows a toast with Undo, so the counter flow stays one tap.
-export async function useEntries(customer, count, { onChange } = {}) {
+export async function deductEntries(customer, count, { onChange } = {}) {
   try {
     const result = await api(`/customers/${customer.id}/entry`, { method: 'POST', body: { count } })
     vibrate()

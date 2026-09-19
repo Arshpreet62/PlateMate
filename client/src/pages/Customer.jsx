@@ -10,8 +10,7 @@ import { Layout } from '../components/Layout.jsx'
 import { QrModal } from '../components/QrModal.jsx'
 import { Stepper } from '../components/Stepper.jsx'
 import { TopupModal } from '../components/TopupModal.jsx'
-import { useEntries } from '../entries.jsx'
-import { useMoney } from '../settings.jsx'
+import { deductEntries } from '../entries.jsx'
 
 const typeLabel = { TOPUP: 'Added', ENTRY: 'Ate', ADJUST: 'Adjusted' }
 const typeColor = { TOPUP: 'green', ENTRY: 'brand', ADJUST: 'blue' }
@@ -44,7 +43,6 @@ export function Customer() {
   const { id } = useParams()
   const [params, setParams] = useSearchParams()
   const { user } = useAuth()
-  const money = useMoney()
   const [customer, setCustomer] = useState(null)
   const [error, setError] = useState(null)
   const [modal, setModal] = useState(params.get('topup') ? 'topup' : null)
@@ -80,7 +78,7 @@ export function Customer() {
 
   const use = async () => {
     setBusy(true)
-    await useEntries(customer, count, { onChange: load })
+    await deductEntries(customer, count, { onChange: load })
     setCount(1)
     setBusy(false)
   }
@@ -137,26 +135,26 @@ export function Customer() {
   return (
     <Layout title={customer.name} back action={menu}>
       <Stack gap="md">
-        <Card withBorder padding="lg">
+        <Box className="hero" data-finished={customer.credits === 0 || undefined}>
           <Group wrap="nowrap" align="center" gap="md">
             <CustomerAvatar name={customer.name} size={56} />
             <Box style={{ flex: 1, minWidth: 0 }}>
-              <Title order={3} lineClamp={2}>{customer.name}</Title>
-              <Text c="dimmed">{customer.phone || 'No phone yet'}</Text>
+              <Title order={3} lineClamp={2} c="white">{customer.name}</Title>
+              <Text className="dim" size="sm">{customer.phone || 'No phone yet'}{customer.notes ? ` · ${customer.notes}` : ''}</Text>
             </Box>
-            <BalancePill credits={customer.credits} size="xl" />
           </Group>
-          {(customer.notes || customer.credits <= 2) && (
-            <Group justify="space-between" mt="sm">
-              <Text size="sm" c="dimmed">{customer.notes}</Text>
-              {customer.credits <= 2 && (
-                <Text size="sm" c={customer.credits === 0 ? 'red' : 'yellow.8'} fw={600}>
-                  {customer.credits === 0 ? 'No entries left' : 'Running low'}
-                </Text>
-              )}
-            </Group>
-          )}
-        </Card>
+          <Group justify="space-between" align="flex-end" mt="lg">
+            <div>
+              <Text className="dim" size="sm" fw={600} tt="uppercase" lts={1}>Entries left</Text>
+              <Text fw={900} style={{ fontSize: 56, lineHeight: 1 }} className="balance-pill">{customer.credits}</Text>
+            </div>
+            {customer.credits <= 2 && (
+              <Text size="sm" fw={700} px="sm" py={4} style={{ background: 'rgba(255,255,255,0.2)', borderRadius: 999 }}>
+                {customer.credits === 0 ? 'Plan finished' : 'Running low'}
+              </Text>
+            )}
+          </Group>
+        </Box>
 
         {customer.credits > 0 ? (
           <Card withBorder padding="md">
@@ -170,12 +168,12 @@ export function Customer() {
           </Card>
         ) : (
           <Button size="xl" leftSection={<IconPlus size={22} />} onClick={() => setModal('topup')}>
-            Add a pack
+            Renew plan
           </Button>
         )}
 
         <Group grow>
-          <Button variant="light" leftSection={<IconPlus size={20} />} onClick={() => setModal('topup')}>Add entries</Button>
+          <Button variant="light" leftSection={<IconPlus size={20} />} onClick={() => setModal('topup')}>Add a plan</Button>
           <Button variant="light" color="gray" leftSection={<IconQrcode size={20} />} onClick={() => setModal('qr')}>QR code</Button>
         </Group>
 
@@ -201,7 +199,6 @@ export function Customer() {
                           {timeOf(t.createdAt)} · {t.performedBy.name}{t.note ? ` · ${t.note}` : ''}
                         </Text>
                       </Box>
-                      {t.amount != null && <Text fw={600} size="sm">{money(t.amount)}</Text>}
                     </Group>
                   ))}
                 </Card>

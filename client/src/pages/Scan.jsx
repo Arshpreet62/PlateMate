@@ -6,7 +6,7 @@ import { api } from '../api.js'
 import { BalancePill, CustomerAvatar } from '../components/CustomerBits.jsx'
 import { Layout } from '../components/Layout.jsx'
 import { Stepper } from '../components/Stepper.jsx'
-import { useEntries as deduct, vibrate } from '../entries.jsx'
+import { deductEntries as deduct, vibrate } from '../entries.jsx'
 
 const REGION_ID = 'qr-reader'
 

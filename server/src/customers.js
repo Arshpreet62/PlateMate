@@ -18,20 +18,16 @@ function toSearchRow({ transactions, ...c }) {
   return { ...c, lastVisitAt: transactions[0]?.createdAt ?? null }
 }
 
-async function nameTaken(name, exceptId) {
-  const existing = await prisma.customer.findFirst({
-    where: { name: { equals: name, mode: 'insensitive' }, ...(exceptId ? { id: { not: exceptId } } : {}) },
-    select: { id: true },
-  })
-  return Boolean(existing)
-}
-
 const NAME_TAKEN = 'Another customer already has this exact name — add a surname or nickname'
+
+function isNameCollision(err) {
+  return err?.code === 'P2002' || /Customer_name_lower_key/.test(err?.message ?? '')
+}
 
 function validateDetails(body, { partial = false } = {}) {
   const out = {}
   if (!partial || body.name !== undefined) {
-    const name = String(body.name ?? '').trim()
+    const name = String(body.name ?? '').trim().replace(/\s+/g, ' ')
     if (!name) return { error: 'Name is required' }
     out.name = name
   }
@@ -44,13 +40,14 @@ function validateDetails(body, { partial = false } = {}) {
 }
 
 customersRouter.get('/', async (req, res) => {
-  const q = String(req.query.q ?? '').trim()
+  const q = String(req.query.q ?? '').trim().replace(/\s+/g, ' ')
+  const digits = q.replace(/[\s-]/g, '')
   const exact = req.query.exact === '1'
   const customers = await prisma.customer.findMany({
     where: q
       ? exact
         ? { name: { equals: q, mode: 'insensitive' } }
-        : { OR: [{ name: { contains: q, mode: 'insensitive' } }, { phone: { contains: q } }] }
+        : { OR: [{ name: { contains: q, mode: 'insensitive' } }, ...(digits ? [{ phone: { contains: digits } }] : [])] }
       : undefined,
     select: searchSelect,
     orderBy: q ? { name: 'asc' } : { createdAt: 'desc' },
@@ -62,9 +59,13 @@ customersRouter.get('/', async (req, res) => {
 customersRouter.post('/', async (req, res) => {
   const { data, error } = validateDetails(req.body ?? {})
   if (error) return res.status(400).json({ error })
-  if (await nameTaken(data.name)) return res.status(409).json({ error: NAME_TAKEN })
-  const customer = await prisma.customer.create({ data, select: summary })
-  res.status(201).json(customer)
+  try {
+    const customer = await prisma.customer.create({ data, select: summary })
+    res.status(201).json(customer)
+  } catch (err) {
+    if (isNameCollision(err)) return res.status(409).json({ error: NAME_TAKEN })
+    throw err
+  }
 })
 
 customersRouter.get('/:id', async (req, res) => {
@@ -79,15 +80,22 @@ customersRouter.get('/:id', async (req, res) => {
     },
   })
   if (!customer) return res.status(404).json({ error: 'Customer not found' })
-  res.json({ ...customer, qr: qrCode(customer) })
+  const transactions = req.user.role === 'OWNER'
+    ? customer.transactions
+    : customer.transactions.map(({ amount, ...t }) => t)
+  res.json({ ...customer, transactions, qr: qrCode(customer) })
 })
 
 customersRouter.patch('/:id', async (req, res) => {
   const { data, error } = validateDetails(req.body ?? {}, { partial: true })
   if (error) return res.status(400).json({ error })
-  if (data.name && (await nameTaken(data.name, req.params.id))) return res.status(409).json({ error: NAME_TAKEN })
-  const customer = await prisma.customer.update({ where: { id: req.params.id }, data, select: summary })
-  res.json(customer)
+  try {
+    const customer = await prisma.customer.update({ where: { id: req.params.id }, data, select: summary })
+    res.json(customer)
+  } catch (err) {
+    if (isNameCollision(err)) return res.status(409).json({ error: NAME_TAKEN })
+    throw err
+  }
 })
 
 customersRouter.post('/:id/topup', async (req, res) => {

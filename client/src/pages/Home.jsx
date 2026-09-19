@@ -1,13 +1,15 @@
 import { ActionIcon, Box, Button, Card, Drawer, Group, Loader, Stack, Text, TextInput, UnstyledButton } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
-import { IconSearch, IconUserPlus, IconX } from '@tabler/icons-react'
+import { modals } from '@mantine/modals'
+import { notifications } from '@mantine/notifications'
+import { IconArrowBackUp, IconSearch, IconUserPlus, IconX } from '@tabler/icons-react'
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { api } from '../api.js'
 import { BalancePill, CustomerAvatar, customerHint } from '../components/CustomerBits.jsx'
 import { Layout } from '../components/Layout.jsx'
 import { Stepper } from '../components/Stepper.jsx'
-import { useEntries } from '../entries.jsx'
+import { deductEntries } from '../entries.jsx'
 
 function timeOf(iso) {
   return new Date(iso).toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' })
@@ -43,15 +45,32 @@ export function Home() {
 
   const quickUse = async (customer) => {
     setBusyId(customer.id)
-    await useEntries(customer, 1, { onChange: (r) => patchCustomer(r.customer) })
+    await deductEntries(customer, 1, { onChange: (r) => patchCustomer(r.customer) })
     setBusyId(null)
   }
+
+  const undoVisit = (v) =>
+    modals.openConfirmModal({
+      title: 'Undo this entry?',
+      children: <Text size="sm">{v.customer.name} gets {-v.delta} {-v.delta === 1 ? 'entry' : 'entries'} back.</Text>,
+      labels: { confirm: 'Undo', cancel: 'Keep' },
+      onConfirm: async () => {
+        try {
+          const r = await api(`/customers/${v.customer.id}/undo/${v.id}`, { method: 'POST' })
+          notifications.show({ color: 'blue', message: `Undone — ${v.customer.name} has ${r.customer.credits} left` })
+          loadToday()
+        } catch (err) {
+          notifications.show({ color: 'red', message: err.message })
+          loadToday()
+        }
+      },
+    })
 
   const groupUse = async () => {
     const c = group
     setGroup(null)
     setBusyId(c.id)
-    await useEntries(c, count, { onChange: (r) => patchCustomer(r.customer) })
+    await deductEntries(c, count, { onChange: (r) => patchCustomer(r.customer) })
     setBusyId(null)
   }
 
@@ -64,6 +83,7 @@ export function Home() {
           onChange={(e) => setQuery(e.currentTarget.value)}
           size="xl"
           radius="xl"
+          className="search-pill"
           leftSection={<IconSearch size={22} />}
           rightSection={
             query && (
@@ -115,7 +135,7 @@ export function Home() {
                       </Stack>
                     ) : (
                       <Button size="md" variant="light" component={Link} to={`/customers/${c.id}?topup=1`}>
-                        Add pack
+                        Renew
                       </Button>
                     )}
                   </Group>
@@ -140,14 +160,23 @@ export function Home() {
               </Card>
             ) : (
               today.visits.map((v) => (
-                <Card key={v.id} withBorder padding="sm" component={Link} to={`/customers/${v.customer.id}`} className="tap-row">
+                <Card key={v.id} withBorder padding="sm" className="tap-row">
                   <Group wrap="nowrap" gap="sm">
-                    <CustomerAvatar name={v.customer.name} size={36} />
-                    <Box style={{ flex: 1, minWidth: 0 }}>
-                      <Text fw={600} truncate>{v.customer.name}</Text>
-                      <Text size="sm" c="dimmed">{timeOf(v.createdAt)}{-v.delta > 1 ? ` · ${-v.delta} people` : ''}</Text>
-                    </Box>
+                    <UnstyledButton onClick={() => navigate(`/customers/${v.customer.id}`)} style={{ flex: 1, minWidth: 0 }}>
+                      <Group wrap="nowrap" gap="sm">
+                        <CustomerAvatar name={v.customer.name} size={36} />
+                        <Box style={{ flex: 1, minWidth: 0 }}>
+                          <Text fw={600} truncate>{v.customer.name}</Text>
+                          <Text size="sm" c="dimmed">{timeOf(v.createdAt)}{-v.delta > 1 ? ` · ${-v.delta} people` : ''}</Text>
+                        </Box>
+                      </Group>
+                    </UnstyledButton>
                     <BalancePill credits={v.customer.credits} size="md" />
+                    {v.canUndo && (
+                      <ActionIcon variant="light" color="blue" size="lg" aria-label="Undo" onClick={() => undoVisit(v)}>
+                        <IconArrowBackUp size={20} />
+                      </ActionIcon>
+                    )}
                   </Group>
                 </Card>
               ))
