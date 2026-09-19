@@ -15,10 +15,9 @@ function validateDetails(body, { partial = false } = {}) {
     if (!name) return { error: 'Name is required' }
     out.name = name
   }
-  if (!partial || body.phone !== undefined) {
+  if (body.phone !== undefined) {
     const phone = String(body.phone ?? '').replace(/\s+/g, '')
-    if (!phone) return { error: 'Phone number is required' }
-    out.phone = phone
+    out.phone = phone || null
   }
   if (body.notes !== undefined) out.notes = body.notes ? String(body.notes).trim() : null
   return { data: out }

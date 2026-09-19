@@ -13,7 +13,6 @@ export function NewCustomer() {
     initialValues: { name: '', phone: '', notes: '' },
     validate: {
       name: (v) => (v.trim() ? null : 'Name is required'),
-      phone: (v) => (v.replace(/\s+/g, '').length >= 6 ? null : 'Phone number is required'),
     },
   })
 
@@ -35,7 +34,7 @@ export function NewCustomer() {
       <form onSubmit={submit}>
         <Stack>
           <TextInput label="Name" autoFocus {...form.getInputProps('name')} />
-          <TextInput label="Phone" type="tel" inputMode="tel" {...form.getInputProps('phone')} />
+          <TextInput label="Phone (optional, can be added later)" type="tel" inputMode="tel" {...form.getInputProps('phone')} />
           <Textarea label="Notes (optional)" autosize minRows={2} {...form.getInputProps('notes')} />
           <Button type="submit" loading={loading} fullWidth>Save customer</Button>
         </Stack>

@@ -30,10 +30,14 @@ describe('auth and roles', () => {
     expect((await staff.patch('/api/settings').send({ customPriceBelow: 100 })).status).toBe(403)
   })
 
-  it('requires name and phone for customers', async () => {
+  it('requires a name but not a phone for customers', async () => {
     const owner = await ownerAgent()
-    expect((await owner.post('/api/customers').send({ name: 'X' })).status).toBe(400)
     expect((await owner.post('/api/customers').send({ phone: '1' })).status).toBe(400)
+    const noPhone = await owner.post('/api/customers').send({ name: 'X', phone: '  ' })
+    expect(noPhone.status).toBe(201)
+    expect(noPhone.body.phone).toBeNull()
+    const added = await owner.patch(`/api/customers/${noPhone.body.id}`).send({ phone: '98765 43210' })
+    expect(added.body.phone).toBe('9876543210')
   })
 })
 

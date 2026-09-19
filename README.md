@@ -39,6 +39,9 @@ Useful: `cd server && npx prisma studio` opens a GUI for the database.
 - Custom top-ups: 90 per entry below 22 entries, 80 per entry from 22 up
   (`Setting` table). Staff can override the amount (e.g. a discount).
 - Entries can be used several at a time; refused if the balance is too low.
+- Phone number is optional and can be added later from the customer's page.
+- Every customer has a signed QR code (Show QR on their page). Staff scan it
+  from the home screen; forged or replaced codes are rejected.
 - Every top-up, entry, and adjustment is logged with who did it.
 - Roles: `OWNER` can adjust balances, edit packs/settings, manage staff.
   `STAFF` can search, add customers, sell, and deduct.
@@ -67,6 +70,6 @@ Repeat step 3's `migrate deploy` whenever a new version adds a migration.
 
 ## Roadmap
 
-- v0.1 — customers, packs, entries, history, login (this version)
-- v0.2 — signed QR per customer + camera scanner
+- v0.1 — customers, packs, entries, history, login
+- v0.2 — signed QR per customer + camera scanner, optional phone (this version)
 - v0.3 — owner tools: staff accounts, pack/price editing, CSV export

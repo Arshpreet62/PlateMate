@@ -37,7 +37,7 @@ export function Home() {
         />
         <Group grow>
           <Button component={Link} to="/customers/new" variant="light">+ Add customer</Button>
-          <Button component={Link} to="/scan" variant="light" disabled>Scan QR</Button>
+          <Button component={Link} to="/scan" variant="light">Scan QR</Button>
         </Group>
         {today && (
           <Text c="dimmed" ta="center" size="sm">
@@ -58,7 +58,7 @@ export function Home() {
                 <Group justify="space-between" wrap="nowrap">
                   <div>
                     <Text fw={600} size="lg">{c.name}</Text>
-                    <Text c="dimmed" size="sm">{c.phone}</Text>
+                    <Text c="dimmed" size="sm">{c.phone || 'No phone yet'}</Text>
                   </div>
                   <Badge size="xl" color={c.credits > 0 ? 'green' : 'gray'} variant="light">
                     {c.credits} left

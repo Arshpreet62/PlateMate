@@ -5,6 +5,7 @@ import { useParams } from 'react-router-dom'
 import { api } from '../api.js'
 import { useAuth } from '../auth.jsx'
 import { Layout } from '../components/Layout.jsx'
+import { QrModal } from '../components/QrModal.jsx'
 import { Stepper } from '../components/Stepper.jsx'
 import { TopupModal } from '../components/TopupModal.jsx'
 import { useMoney } from '../settings.jsx'
@@ -90,14 +91,14 @@ export function Customer() {
           <Group justify="space-between" align="flex-start" wrap="nowrap">
             <div>
               <Title order={3}>{customer.name}</Title>
-              <Text c="dimmed">{customer.phone}</Text>
+              <Text c="dimmed">{customer.phone || 'No phone yet'}</Text>
               {customer.notes && <Text size="sm" mt="xs">{customer.notes}</Text>}
             </div>
             <Button
               variant="subtle"
               size="sm"
               onClick={() => {
-                setEdit({ name: customer.name, phone: customer.phone, notes: customer.notes ?? '' })
+                setEdit({ name: customer.name, phone: customer.phone ?? '', notes: customer.notes ?? '' })
                 setModal('edit')
               }}
             >
@@ -119,12 +120,13 @@ export function Customer() {
         </Button>
         <Group grow>
           <Button variant="light" onClick={() => setModal('topup')}>Add entries</Button>
-          {user.role === 'OWNER' && (
-            <Button variant="light" color="blue" onClick={() => { setAdjust({ delta: 1, note: '' }); setModal('adjust') }}>
-              Adjust
-            </Button>
-          )}
+          <Button variant="light" color="gray" onClick={() => setModal('qr')}>Show QR</Button>
         </Group>
+        {user.role === 'OWNER' && (
+          <Button variant="subtle" color="blue" size="md" onClick={() => { setAdjust({ delta: 1, note: '' }); setModal('adjust') }}>
+            Adjust balance (fix a mistake)
+          </Button>
+        )}
 
         <Title order={5} mt="md">History</Title>
         {customer.transactions.length === 0 ? (
@@ -164,6 +166,13 @@ export function Customer() {
       </Modal>
 
       <TopupModal opened={modal === 'topup'} onClose={() => setModal(null)} customer={customer} onDone={load} />
+
+      <QrModal
+        opened={modal === 'qr'}
+        onClose={() => setModal(null)}
+        customer={customer}
+        onRegenerated={(qr) => setCustomer({ ...customer, qr })}
+      />
 
       <Modal opened={modal === 'adjust'} onClose={() => setModal(null)} title="Adjust balance" centered>
         <Stack>
