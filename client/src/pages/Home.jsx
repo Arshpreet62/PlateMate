@@ -87,9 +87,6 @@ export function Home() {
             </Card>
           ) : (
             <Stack gap="xs">
-              {new Set(results.map((c) => c.name.trim().toLowerCase())).size < results.length && (
-                <Text size="sm" c="yellow.8" fw={600}>Same name, different people — check the phone, note, or last visit before tapping.</Text>
-              )}
               {results.map((c) => (
                 <Card key={c.id} withBorder padding="sm" className="tap-row">
                   <Group wrap="nowrap" gap="sm">

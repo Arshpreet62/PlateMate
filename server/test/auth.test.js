@@ -89,3 +89,15 @@ describe('search', () => {
     expect(exact.body[0].id).toBe(a.id)
   })
 })
+
+describe('unique names', () => {
+  it('refuses a second customer with the same name (case-insensitive) on create and rename', async () => {
+    const owner = await ownerAgent()
+    await createCustomer(owner, { name: 'Guru Sharma', phone: '1' })
+    const dup = await owner.post('/api/customers').send({ name: 'guru sharma', phone: '2' })
+    expect(dup.status).toBe(409)
+    const other = await createCustomer(owner, { name: 'Guru Verma', phone: '3' })
+    expect((await owner.patch(`/api/customers/${other.id}`).send({ name: 'GURU SHARMA' })).status).toBe(409)
+    expect((await owner.patch(`/api/customers/${other.id}`).send({ name: 'Guru Verma' })).status).toBe(200)
+  })
+})

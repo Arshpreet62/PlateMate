@@ -18,6 +18,16 @@ function toSearchRow({ transactions, ...c }) {
   return { ...c, lastVisitAt: transactions[0]?.createdAt ?? null }
 }
 
+async function nameTaken(name, exceptId) {
+  const existing = await prisma.customer.findFirst({
+    where: { name: { equals: name, mode: 'insensitive' }, ...(exceptId ? { id: { not: exceptId } } : {}) },
+    select: { id: true },
+  })
+  return Boolean(existing)
+}
+
+const NAME_TAKEN = 'Another customer already has this exact name — add a surname or nickname'
+
 function validateDetails(body, { partial = false } = {}) {
   const out = {}
   if (!partial || body.name !== undefined) {
@@ -52,6 +62,7 @@ customersRouter.get('/', async (req, res) => {
 customersRouter.post('/', async (req, res) => {
   const { data, error } = validateDetails(req.body ?? {})
   if (error) return res.status(400).json({ error })
+  if (await nameTaken(data.name)) return res.status(409).json({ error: NAME_TAKEN })
   const customer = await prisma.customer.create({ data, select: summary })
   res.status(201).json(customer)
 })
@@ -74,6 +85,7 @@ customersRouter.get('/:id', async (req, res) => {
 customersRouter.patch('/:id', async (req, res) => {
   const { data, error } = validateDetails(req.body ?? {}, { partial: true })
   if (error) return res.status(400).json({ error })
+  if (data.name && (await nameTaken(data.name, req.params.id))) return res.status(409).json({ error: NAME_TAKEN })
   const customer = await prisma.customer.update({ where: { id: req.params.id }, data, select: summary })
   res.json(customer)
 })
