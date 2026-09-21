@@ -2,10 +2,10 @@ import { Box, Button, Card, Group, Stack, Text, Title } from '@mantine/core'
 import { Html5Qrcode } from 'html5-qrcode'
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { api } from '../api.js'
 import { BalancePill, CustomerAvatar } from '../components/CustomerBits.jsx'
 import { Layout } from '../components/Layout.jsx'
 import { Stepper } from '../components/Stepper.jsx'
+import { scan } from '../db/qr.js'
 import { deductEntries as deduct, vibrate } from '../entries.jsx'
 
 const REGION_ID = 'qr-reader'
@@ -46,13 +46,13 @@ export function Scan() {
           await stop()
           setPhase('checking')
           try {
-            const found = await api('/scan', { method: 'POST', body: { code: decoded } })
+            const found = await scan(decoded)
             vibrate()
             setCustomer(found)
             setPhase('found')
           } catch (err) {
             vibrate([60, 40, 60])
-            setMessage(err.status === 404 ? 'Not a valid customer code' : err.message)
+            setMessage(err.message)
             setPhase('invalid')
           }
         },
@@ -77,7 +77,7 @@ export function Scan() {
     return () => { stop() }
   }, [])
 
-  const useEntries = async () => {
+  const spend = async () => {
     setBusy(true)
     await deduct(customer, count, { onChange: (r) => setCustomer((c) => ({ ...c, credits: r.customer.credits })) })
     setCount(1)
@@ -87,7 +87,7 @@ export function Scan() {
   const showCamera = phase === 'starting' || phase === 'scanning'
 
   return (
-    <Layout title="Scan QR code">
+    <Layout title="Scan pass" back>
       <Stack>
         <Box
           id={REGION_ID}
@@ -121,10 +121,10 @@ export function Scan() {
               </Group>
               <Text size="sm" c="dimmed" ta="center">Check this is the right person, then choose how many are eating.</Text>
               <Stepper value={count} onChange={setCount} max={Math.max(1, customer.credits)} />
-              <Button size="xl" loading={busy} disabled={customer.credits < count} onClick={useEntries}>
+              <Button size="xl" loading={busy} disabled={customer.credits < count} onClick={spend}>
                 Use {count} {count === 1 ? 'entry' : 'entries'}
               </Button>
-              {customer.credits < 1 && <Text c="red" ta="center" size="sm">No entries left — add a pack first</Text>}
+              {customer.credits < 1 && <Text c="red" ta="center" size="sm">No entries left — add a plan first</Text>}
               <Group grow>
                 <Button variant="light" component={Link} to={`/customers/${customer.id}`}>Open profile</Button>
                 <Button variant="default" onClick={start}>Scan next</Button>

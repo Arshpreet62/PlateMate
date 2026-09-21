@@ -1,7 +1,7 @@
 import { Anchor, Collapse, Group, Stack, Text, UnstyledButton } from '@mantine/core'
 import { IconCheck } from '@tabler/icons-react'
 import { useEffect, useState } from 'react'
-import { api } from '../api.js'
+import { listPacks, quote } from '../db/packs.js'
 import { useMoney } from '../settings.jsx'
 import { Stepper } from './Stepper.jsx'
 
@@ -34,10 +34,10 @@ export function PlanPicker({ value, onChange }) {
   const [packs, setPacks] = useState(null)
   const [showCustom, setShowCustom] = useState(Boolean(value?.credits))
   const [customCredits, setCustomCredits] = useState(value?.credits ?? 10)
-  const [quote, setQuote] = useState(null)
+  const [customPrice, setCustomPrice] = useState(null)
 
   useEffect(() => {
-    api('/packs').then(setPacks).catch(() => setPacks([]))
+    listPacks().then(setPacks).catch(() => setPacks([]))
   }, [])
 
   const isCustom = value?.credits != null
@@ -45,7 +45,7 @@ export function PlanPicker({ value, onChange }) {
   useEffect(() => {
     if (!isCustom) return
     let cancelled = false
-    api(`/quote?credits=${customCredits}`).then((q) => !cancelled && setQuote(q)).catch(() => {})
+    quote(customCredits).then((q) => !cancelled && setCustomPrice(q)).catch(() => {})
     return () => { cancelled = true }
   }, [isCustom, customCredits])
 
@@ -55,6 +55,10 @@ export function PlanPicker({ value, onChange }) {
   }
 
   if (packs === null) return <Text c="dimmed" ta="center">Loading plans…</Text>
+
+  if (packs.length === 0) {
+    return <Text c="dimmed" ta="center" py="md">No plans on sale — add one in Menu → Plans &amp; prices.</Text>
+  }
 
   return (
     <Stack gap="sm">
@@ -78,7 +82,7 @@ export function PlanPicker({ value, onChange }) {
           onClick={() => pickCustom(customCredits)}
           title="Other number"
           subtitle={isCustom ? `${customCredits} entries` : 'Choose how many'}
-          price={isCustom && quote?.credits === customCredits ? money(quote.price) : null}
+          price={isCustom && customPrice?.credits === customCredits ? money(customPrice.price) : null}
         />
       )}
       <Collapse expanded={isCustom}>

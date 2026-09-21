@@ -8,7 +8,7 @@ import {
   listCustomers,
   updateCustomer,
 } from '../src/db/customers.js'
-import { useEntries } from '../src/db/credits.js'
+import { spendEntries } from '../src/db/credits.js'
 import { customerWith, resetForTests } from './helpers.js'
 
 beforeEach(resetForTests)
@@ -46,7 +46,7 @@ describe('finding customers', () => {
   it('reports the last visit', async () => {
     const seen = await customerWith(5, 'Ravi Kumar')
     await createCustomer({ name: 'Never Been' })
-    await useEntries(seen.id, { count: 1 })
+    await spendEntries(seen.id, { count: 1 })
     const all = await listCustomers()
     expect(all.find((c) => c.id === seen.id).lastVisitAt).toBeInstanceOf(Date)
     expect(all.find((c) => c.name === 'Never Been').lastVisitAt).toBeNull()
@@ -64,8 +64,8 @@ describe('finding customers', () => {
 describe('customer page', () => {
   it('returns the history newest first with a pass code', async () => {
     const customer = await customerWith(5)
-    await useEntries(customer.id, { count: 1 })
-    await useEntries(customer.id, { count: 2 })
+    await spendEntries(customer.id, { count: 1 })
+    await spendEntries(customer.id, { count: 2 })
     const full = await getCustomer(customer.id)
     expect(full.qr).toBe(`buffet:${customer.id}`)
     expect(full.transactions.map((t) => t.delta)).toEqual([-2, -1])

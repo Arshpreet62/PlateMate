@@ -5,7 +5,4 @@ dist/
 !.env.example
 *.log
 .vercel
-server/src/generated/
 .claude/
-.neon
-api/_app.mjs

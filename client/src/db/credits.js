@@ -73,7 +73,7 @@ export async function topup(customerId, { packId, credits, amount, note }) {
   })
 }
 
-export async function useEntries(customerId, { count = 1, note } = {}) {
+export async function spendEntries(customerId, { count = 1, note } = {}) {
   const n = positiveInt(count)
   if (!n) throw new CreditError(400, 'Count must be a positive whole number')
   return applyChange(customerId, {

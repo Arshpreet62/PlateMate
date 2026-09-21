@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { adjust, topup, undoEntry, useEntries, UNDO_WINDOW_MS } from '../src/db/credits.js'
+import { adjust, spendEntries, topup, undoEntry, UNDO_WINDOW_MS } from '../src/db/credits.js'
 import { quote } from '../src/db/packs.js'
 import { customerWith, db, packNamed, resetForTests } from './helpers.js'
 
@@ -38,15 +38,15 @@ describe('top-ups', () => {
 describe('entries', () => {
   it('deducts and refuses to go below zero', async () => {
     const customer = await customerWith(2)
-    expect((await useEntries(customer.id, { count: 2 })).customer.credits).toBe(0)
-    await expect(useEntries(customer.id, { count: 1 })).rejects.toThrow(/Not enough entries left \(0\)/)
+    expect((await spendEntries(customer.id, { count: 2 })).customer.credits).toBe(0)
+    await expect(spendEntries(customer.id, { count: 1 })).rejects.toThrow(/Not enough entries left \(0\)/)
   })
 
   it('cannot deduct twice from a double tap', async () => {
     const customer = await customerWith(1)
     const results = await Promise.allSettled([
-      useEntries(customer.id, { count: 1 }),
-      useEntries(customer.id, { count: 1 }),
+      spendEntries(customer.id, { count: 1 }),
+      spendEntries(customer.id, { count: 1 }),
     ])
     expect(results.filter((r) => r.status === 'fulfilled')).toHaveLength(1)
     expect((await db.customers.get(customer.id)).credits).toBe(0)
@@ -56,7 +56,7 @@ describe('entries', () => {
 describe('undo', () => {
   it('gives the entries back once, and only once', async () => {
     const customer = await customerWith(5)
-    const { transaction } = await useEntries(customer.id, { count: 2 })
+    const { transaction } = await spendEntries(customer.id, { count: 2 })
     expect((await undoEntry(transaction.id)).customer.credits).toBe(5)
     await expect(undoEntry(transaction.id)).rejects.toThrow(/Already undone/)
     expect((await db.customers.get(customer.id)).credits).toBe(5)
@@ -64,7 +64,7 @@ describe('undo', () => {
 
   it('closes after the undo window', async () => {
     const customer = await customerWith(5)
-    const { transaction } = await useEntries(customer.id, { count: 1 })
+    const { transaction } = await spendEntries(customer.id, { count: 1 })
     await db.transactions.update(transaction.id, { createdAt: new Date(Date.now() - UNDO_WINDOW_MS - 1000) })
     await expect(undoEntry(transaction.id)).rejects.toThrow(/Too late to undo/)
   })

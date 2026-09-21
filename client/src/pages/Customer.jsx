@@ -3,14 +3,15 @@ import { notifications } from '@mantine/notifications'
 import { IconAdjustments, IconDotsVertical, IconPencil, IconPlus, IconQrcode } from '@tabler/icons-react'
 import { useCallback, useEffect, useState } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
-import { api } from '../api.js'
-import { useAuth } from '../auth.jsx'
-import { BalancePill, CustomerAvatar } from '../components/CustomerBits.jsx'
+import { CustomerAvatar } from '../components/CustomerBits.jsx'
 import { Layout } from '../components/Layout.jsx'
 import { QrModal } from '../components/QrModal.jsx'
 import { Stepper } from '../components/Stepper.jsx'
 import { TopupModal } from '../components/TopupModal.jsx'
+import { adjust as adjustBalance } from '../db/credits.js'
+import { getCustomer, updateCustomer } from '../db/customers.js'
 import { deductEntries } from '../entries.jsx'
+import { useNameCheck } from '../useNameCheck.js'
 
 const typeLabel = { TOPUP: 'Added', ENTRY: 'Ate', ADJUST: 'Adjusted' }
 const typeColor = { TOPUP: 'green', ENTRY: 'brand', ADJUST: 'blue' }
@@ -42,7 +43,6 @@ function groupByDay(transactions) {
 export function Customer() {
   const { id } = useParams()
   const [params, setParams] = useSearchParams()
-  const { user } = useAuth()
   const [customer, setCustomer] = useState(null)
   const [error, setError] = useState(null)
   const [modal, setModal] = useState(params.get('topup') ? 'topup' : null)
@@ -50,9 +50,10 @@ export function Customer() {
   const [busy, setBusy] = useState(false)
   const [adjust, setAdjust] = useState({ delta: 1, note: '' })
   const [edit, setEdit] = useState({ name: '', phone: '', notes: '' })
+  const nameCheck = useNameCheck(modal === 'edit' ? edit.name : '', { ignoreId: id })
 
   const load = useCallback(() => {
-    api(`/customers/${id}`).then(setCustomer).catch((e) => setError(e.message))
+    getCustomer(id).then(setCustomer).catch((e) => setError(e.message))
   }, [id])
 
   useEffect(load, [load])
@@ -76,7 +77,7 @@ export function Customer() {
     }
   }
 
-  const use = async () => {
+  const spend = async () => {
     setBusy(true)
     await deductEntries(customer, count, { onChange: load })
     setCount(1)
@@ -84,10 +85,10 @@ export function Customer() {
   }
 
   const submitAdjust = () =>
-    run(() => api(`/customers/${id}/adjust`, { method: 'POST', body: adjust }), (r) => `Balance is now ${r.customer.credits}`)
+    run(() => adjustBalance(id, adjust), (r) => `Balance is now ${r.customer.credits}`)
 
   const submitEdit = () =>
-    run(() => api(`/customers/${id}`, { method: 'PATCH', body: edit }), () => 'Details saved')
+    run(() => updateCustomer(id, edit), () => 'Details saved')
 
   if (error) {
     return (
@@ -123,11 +124,9 @@ export function Customer() {
         >
           Edit details
         </Menu.Item>
-        {user.role === 'OWNER' && (
-          <Menu.Item leftSection={<IconAdjustments size={18} />} onClick={() => { setAdjust({ delta: 1, note: '' }); setModal('adjust') }}>
-            Adjust balance
-          </Menu.Item>
-        )}
+        <Menu.Item leftSection={<IconAdjustments size={18} />} onClick={() => { setAdjust({ delta: 1, note: '' }); setModal('adjust') }}>
+          Adjust balance
+        </Menu.Item>
       </Menu.Dropdown>
     </Menu>
   )
@@ -137,7 +136,7 @@ export function Customer() {
       <Stack gap="md">
         <Box className="hero" data-finished={customer.credits === 0 || undefined}>
           <Group wrap="nowrap" align="center" gap="md">
-            <CustomerAvatar name={customer.name} size={56} />
+            <CustomerAvatar name={customer.name} size={56} onDark />
             <Box style={{ flex: 1, minWidth: 0 }}>
               <Title order={3} lineClamp={2} c="white">{customer.name}</Title>
               <Text className="dim" size="sm">{customer.phone || 'No phone yet'}{customer.notes ? ` · ${customer.notes}` : ''}</Text>
@@ -161,7 +160,7 @@ export function Customer() {
             <Stack gap="sm">
               <Text fw={600} ta="center" c="dimmed">How many people are eating?</Text>
               <Stepper value={count} onChange={setCount} min={1} max={customer.credits} />
-              <Button size="xl" loading={busy} disabled={!canUse} onClick={use}>
+              <Button size="xl" loading={busy} disabled={!canUse} onClick={spend}>
                 Use {count} {count === 1 ? 'entry' : 'entries'}
               </Button>
             </Stack>
@@ -187,7 +186,7 @@ export function Customer() {
                 <Text size="xs" c="dimmed" fw={600} tt="uppercase" mb={4}>{g.label}</Text>
                 <Card withBorder padding={0}>
                   {g.items.map((t, i) => (
-                    <Group key={t.id} wrap="nowrap" px="md" py="sm" style={{ borderTop: i ? '1px solid #f0ebe4' : undefined }}>
+                    <Group key={t.id} wrap="nowrap" px="md" py="sm" className={i ? 'history-row' : undefined}>
                       <Text fw={800} w={44} c={typeColor[t.type]} ta="right" className="balance-pill">
                         {t.delta > 0 ? '+' : ''}{t.delta}
                       </Text>
@@ -196,7 +195,7 @@ export function Customer() {
                           {typeLabel[t.type]}{t.packName ? ` · ${t.packName}` : ''}
                         </Text>
                         <Text size="xs" c="dimmed" truncate>
-                          {timeOf(t.createdAt)} · {t.performedBy.name}{t.note ? ` · ${t.note}` : ''}
+                          {timeOf(t.createdAt)}{t.note ? ` · ${t.note}` : ''}
                         </Text>
                       </Box>
                     </Group>
@@ -210,7 +209,7 @@ export function Customer() {
 
       <TopupModal opened={modal === 'topup'} onClose={closeModal} customer={customer} onDone={load} />
 
-      <QrModal opened={modal === 'qr'} onClose={closeModal} customer={customer} onRegenerated={(qr) => setCustomer({ ...customer, qr })} />
+      <QrModal opened={modal === 'qr'} onClose={closeModal} customer={customer} />
 
       <Modal opened={modal === 'adjust'} onClose={closeModal} title="Adjust balance">
         <Stack>
@@ -223,10 +222,15 @@ export function Customer() {
 
       <Modal opened={modal === 'edit'} onClose={closeModal} title="Edit details">
         <Stack>
-          <TextInput label="Name" value={edit.name} onChange={(e) => setEdit({ ...edit, name: e.currentTarget.value })} />
+          <TextInput
+            label="Name"
+            value={edit.name}
+            error={nameCheck.taken ? `${nameCheck.taken.name} already exists` : null}
+            onChange={(e) => setEdit({ ...edit, name: e.currentTarget.value })}
+          />
           <TextInput label="Phone" type="tel" value={edit.phone} onChange={(e) => setEdit({ ...edit, phone: e.currentTarget.value })} />
           <Textarea label="Notes" autosize minRows={2} value={edit.notes} onChange={(e) => setEdit({ ...edit, notes: e.currentTarget.value })} />
-          <Button loading={busy} onClick={submitEdit}>Save</Button>
+          <Button loading={busy} onClick={submitEdit} disabled={!edit.name.trim() || !!nameCheck.taken}>Save</Button>
         </Stack>
       </Modal>
     </Layout>

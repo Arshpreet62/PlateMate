@@ -1,21 +1,26 @@
-import { createContext, useContext, useEffect, useState } from 'react'
-import { api } from './api.js'
-import { useAuth } from './auth.jsx'
+import { createContext, useCallback, useContext, useEffect, useState } from 'react'
+import { getSetting } from './db/packs.js'
+import { DEFAULT_SETTINGS } from './db/schema.js'
 
-const SettingsContext = createContext({ currency: '₹' })
+const SettingsContext = createContext({ settings: DEFAULT_SETTINGS, reload: () => {} })
 
 export function SettingsProvider({ children }) {
-  const { user } = useAuth()
-  const [settings, setSettings] = useState({ currency: '₹' })
+  const [settings, setSettings] = useState(DEFAULT_SETTINGS)
 
-  useEffect(() => {
-    if (user) api('/settings').then(setSettings).catch(() => {})
-  }, [user])
+  const reload = useCallback(() => {
+    getSetting().then(setSettings).catch(() => {})
+  }, [])
 
-  return <SettingsContext.Provider value={settings}>{children}</SettingsContext.Provider>
+  useEffect(reload, [reload])
+
+  return <SettingsContext.Provider value={{ settings, reload }}>{children}</SettingsContext.Provider>
+}
+
+export function useSettings() {
+  return useContext(SettingsContext)
 }
 
 export function useMoney() {
-  const { currency } = useContext(SettingsContext)
-  return (amount) => `${currency}${Number(amount ?? 0).toLocaleString('en-IN')}`
+  const { settings } = useContext(SettingsContext)
+  return (amount) => `${settings.currency}${Number(amount ?? 0).toLocaleString('en-IN')}`
 }

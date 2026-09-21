@@ -6,19 +6,18 @@ export const theme = createTheme({
   primaryShade: 6,
   colors: {
     brand: [
-      '#fff4e6', '#ffe8cc', '#ffd8a8', '#ffc078', '#ffa94d',
-      '#ff922b', '#e8590c', '#d9480f', '#c2410c', '#9a3412',
+      '#eef2ff', '#e0e7ff', '#c7d2fe', '#a5b4fc', '#818cf8',
+      '#6366f1', '#4f46e5', '#4338ca', '#3730a3', '#312e81',
     ],
   },
   defaultRadius: 'lg',
   fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", sans-serif',
-  headings: { fontWeight: '800', fontFamily: 'inherit' },
+  headings: { fontWeight: '800', fontFamily: 'inherit', sizes: { h3: { lineHeight: '1.25' } } },
   fontSizes: { md: rem(17), lg: rem(19), xl: rem(22) },
   components: {
     Button: { defaultProps: { size: 'lg', radius: 'xl' } },
     ActionIcon: { defaultProps: { radius: 'xl' } },
     TextInput: { defaultProps: { size: 'lg', radius: 'lg' } },
-    PasswordInput: { defaultProps: { size: 'lg', radius: 'lg' } },
     NumberInput: { defaultProps: { size: 'lg', radius: 'lg' } },
     Textarea: { defaultProps: { size: 'lg', radius: 'lg' } },
     Card: { defaultProps: { radius: 'lg', padding: 'md' } },

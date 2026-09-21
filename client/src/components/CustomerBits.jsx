@@ -1,16 +1,22 @@
 import { Avatar, Badge } from '@mantine/core'
 
-const AVATAR_COLORS = ['brand', 'teal', 'indigo', 'grape', 'cyan', 'lime', 'pink', 'yellow']
+const AVATAR_COLORS = ['indigo', 'violet', 'teal', 'cyan', 'grape', 'blue', 'pink', 'lime']
 
 export function initials(name) {
   return name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join('')
 }
 
-export function CustomerAvatar({ name, size = 44 }) {
+export function CustomerAvatar({ name, size = 44, onDark = false }) {
   let hash = 0
   for (const ch of name) hash = (hash * 31 + ch.charCodeAt(0)) >>> 0
   return (
-    <Avatar size={size} radius="xl" color={AVATAR_COLORS[hash % AVATAR_COLORS.length]} variant="light">
+    <Avatar
+      size={size}
+      radius="xl"
+      color={AVATAR_COLORS[hash % AVATAR_COLORS.length]}
+      variant="light"
+      className={onDark ? 'avatar-on-dark' : undefined}
+    >
       {initials(name)}
     </Avatar>
   )

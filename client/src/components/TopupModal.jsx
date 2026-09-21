@@ -1,7 +1,7 @@
 import { Button, Drawer, Stack } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { useEffect, useState } from 'react'
-import { api } from '../api.js'
+import { topup } from '../db/credits.js'
 import { vibrate } from '../entries.jsx'
 import { PlanPicker } from './PlanPicker.jsx'
 
@@ -16,8 +16,7 @@ export function TopupModal({ opened, onClose, customer, onDone }) {
   const submit = async () => {
     setLoading(true)
     try {
-      const body = plan.packId ? { packId: plan.packId } : { credits: plan.credits }
-      const result = await api(`/customers/${customer.id}/topup`, { method: 'POST', body })
+      const result = await topup(customer.id, plan.packId ? { packId: plan.packId } : { credits: plan.credits })
       vibrate()
       notifications.show({ color: 'green', message: `${customer.name} now has ${result.customer.credits} entries` })
       onDone(result)

@@ -13,9 +13,9 @@ export default defineConfig({
       manifest: {
         name: 'Buffet Pass',
         short_name: 'Buffet Pass',
-        description: 'Buffet entry credits for staff',
-        theme_color: '#e8590c',
-        background_color: '#ffffff',
+        description: 'Meal passes and entries for a buffet counter',
+        theme_color: '#4f46e5',
+        background_color: '#f6f7fb',
         display: 'standalone',
         start_url: '/',
         icons: [

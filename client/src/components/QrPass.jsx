@@ -17,16 +17,16 @@ async function makeImage(sourceCanvas, name) {
   const ctx = canvas.getContext('2d')
   ctx.fillStyle = '#ffffff'
   ctx.fillRect(0, 0, W, H)
-  ctx.fillStyle = '#1f1a17'
+  ctx.fillStyle = '#0f172a'
   ctx.textAlign = 'center'
   ctx.font = 'bold 44px system-ui, sans-serif'
   ctx.fillText(name, W / 2, 90, W - 80)
   ctx.drawImage(sourceCanvas, (W - 560) / 2, 140, 560, 560)
-  ctx.fillStyle = '#6b6360'
+  ctx.fillStyle = '#64748b'
   ctx.font = '28px system-ui, sans-serif'
   ctx.fillText('Show this at the counter', W / 2, 770)
   ctx.font = 'bold 28px system-ui, sans-serif'
-  ctx.fillStyle = '#e8590c'
+  ctx.fillStyle = '#4f46e5'
   ctx.fillText('Buffet Pass', W / 2, 830)
   const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'))
   return new File([blob], fileNameFor(name), { type: 'image/png' })
@@ -61,7 +61,7 @@ export function QrPass({ customer, hint }) {
 
   return (
     <Stack align="center">
-      <Center bg="white" p="lg" style={{ borderRadius: 20, boxShadow: '0 8px 24px rgba(31,26,23,.08)' }}>
+      <Center bg="white" p="lg" style={{ borderRadius: 20, boxShadow: '0 8px 24px rgba(15,23,42,.08)' }}>
         <QRCodeSVG value={customer.qr} size={240} level="M" />
       </Center>
       <div style={{ display: 'none' }}>

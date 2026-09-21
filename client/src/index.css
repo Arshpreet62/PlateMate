@@ -1,8 +1,11 @@
 :root {
-  --bg: #f6f1ea;
-  --ink: #1f1a17;
-  --brand-a: #ff7a1a;
-  --brand-b: #e8590c;
+  --bg: #f6f7fb;
+  --surface: #ffffff;
+  --ink: #0f172a;
+  --muted: #64748b;
+  --line: rgba(15, 23, 42, 0.08);
+  --brand: #4f46e5;
+  --brand-soft: #eef2ff;
   --nav-h: 64px;
 }
 
@@ -17,56 +20,81 @@ body {
   color: var(--ink);
 }
 
-/* Cards: borderless, soft elevation */
+/* Cards: hairline border, one soft shadow, no gradients */
 .mantine-Card-root {
-  border: 1px solid rgba(31, 26, 23, 0.04) !important;
-  box-shadow: 0 1px 2px rgba(31, 26, 23, 0.04), 0 6px 20px rgba(31, 26, 23, 0.05);
-  background: #fff;
+  border: 1px solid var(--line) !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  background: var(--surface);
 }
 
+.tap-row {
+  transition: transform 120ms, background 120ms;
+}
 .tap-row:active {
-  transform: scale(0.99);
-  background: #fff7ef;
+  transform: scale(0.995);
+  background: var(--brand-soft);
 }
 
-/* Primary buttons get the brand gradient */
 .mantine-Button-root[data-variant='filled'] {
-  background-image: linear-gradient(135deg, var(--brand-a), var(--brand-b));
-  box-shadow: 0 6px 18px rgba(232, 89, 12, 0.28);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08), 0 6px 16px rgba(79, 70, 229, 0.22);
 }
 .mantine-Button-root[data-variant='filled']:active {
   transform: translateY(1px);
-  box-shadow: 0 3px 10px rgba(232, 89, 12, 0.25);
+  box-shadow: 0 1px 4px rgba(79, 70, 229, 0.2);
 }
 .mantine-Button-root[data-variant='filled']:disabled,
 .mantine-Button-root[data-variant='filled'][data-disabled] {
-  background-image: none;
   box-shadow: none;
 }
 
 /* Search pill */
 .search-pill .mantine-Input-input {
-  background: #fff;
-  border: 1px solid rgba(31, 26, 23, 0.06);
-  box-shadow: 0 8px 24px rgba(31, 26, 23, 0.08);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
+}
+.search-pill .mantine-Input-input:focus {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.16);
 }
 
-/* Hero card on the customer page */
+/* Filter chips */
+.chip {
+  padding: 7px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.chip[data-active] {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: #fff;
+}
+
+/* Balance hero on the customer page */
 .hero {
-  background: linear-gradient(135deg, #ff8a2a 0%, #e8590c 60%, #c2410c 100%);
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 55%, #4338ca 100%);
   color: #fff;
   border-radius: 24px;
   padding: 20px;
-  box-shadow: 0 14px 32px rgba(232, 89, 12, 0.3);
+  box-shadow: 0 10px 28px rgba(79, 70, 229, 0.28);
 }
-.hero .dim { color: rgba(255, 255, 255, 0.82); }
+.hero .dim { color: rgba(255, 255, 255, 0.78); }
 .hero[data-finished] {
-  background: linear-gradient(135deg, #8a817a 0%, #6b6360 100%);
-  box-shadow: 0 14px 32px rgba(31, 26, 23, 0.18);
+  background: linear-gradient(135deg, #64748b 0%, #475569 100%);
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.16);
 }
 
 .balance-pill {
   font-variant-numeric: tabular-nums;
+}
+
+.history-row {
+  border-top: 1px solid var(--line);
 }
 
 /* Sticky header with blur */
@@ -74,7 +102,7 @@ body {
   position: sticky;
   top: 0;
   z-index: 10;
-  background: rgba(246, 241, 234, 0.85);
+  background: rgba(246, 247, 251, 0.82);
   backdrop-filter: saturate(160%) blur(12px);
   -webkit-backdrop-filter: saturate(160%) blur(12px);
 }
@@ -90,8 +118,33 @@ body {
   background: rgba(255, 255, 255, 0.94);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
-  border-radius: 24px;
-  box-shadow: 0 10px 30px rgba(31, 26, 23, 0.14);
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.1);
+}
+.nav-item {
+  height: calc(100% - 12px);
+  margin: 6px;
+  border-radius: 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  color: var(--muted);
+}
+.nav-item[data-active] {
+  color: var(--brand);
+  background: var(--brand-soft);
+}
+
+/* Add button, clear of the nav and the toasts */
+.fab {
+  position: fixed;
+  right: 16px;
+  bottom: calc(var(--nav-h) + 22px + env(safe-area-inset-bottom));
+  z-index: 21;
+  box-shadow: 0 8px 22px rgba(79, 70, 229, 0.35) !important;
 }
 
 /* Keep bottom toasts above the floating nav */
@@ -107,29 +160,23 @@ body {
   pointer-events: auto;
 }
 
-/* Password masking without type=password (avoids the browser's save-password sheet) */
-.masked-input input {
-  -webkit-text-security: disc;
-  text-security: disc;
-}
-
 /* Plan cards */
 .plan-card {
   width: 100%;
   border-radius: 18px;
-  border: 2px solid rgba(31, 26, 23, 0.08);
-  background: #fff;
+  border: 2px solid var(--line);
+  background: var(--surface);
   transition: border-color 120ms, background 120ms;
 }
 .plan-card[data-selected] {
-  border-color: var(--brand-b);
-  background: #fff5ec;
+  border-color: var(--brand);
+  background: var(--brand-soft);
 }
 .plan-check {
   width: 26px;
   height: 26px;
   border-radius: 50%;
-  border: 2px solid rgba(31, 26, 23, 0.15);
+  border: 2px solid rgba(15, 23, 42, 0.15);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -137,27 +184,55 @@ body {
   flex: none;
 }
 .plan-card[data-selected] .plan-check {
-  border-color: var(--brand-b);
-  background: var(--brand-b);
+  border-color: var(--brand);
+  background: var(--brand);
 }
 
-/* Offline: block the buttons that would fail */
-[data-offline] .mantine-Button-root[data-variant='filled'] {
-  pointer-events: none;
-  opacity: 0.5;
+/* Plans & prices list */
+.plan-row[data-inactive] {
+  opacity: 0.55;
 }
 
-/* Offline strip */
-.offline-strip {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 30;
-  background: #1f1a17;
+/* Menu rows */
+.menu-row {
+  display: block;
+  padding: 14px 16px;
+  color: inherit;
+}
+.menu-row:active {
+  background: var(--brand-soft);
+}
+
+/* New-customer progress */
+.step-dot {
+  width: 26px;
+  height: 26px;
+  border-radius: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 800;
+  background: var(--brand);
   color: #fff;
-  text-align: center;
-  font-size: 14px;
-  font-weight: 600;
-  padding: 8px 12px;
+}
+.step-dot[data-state='todo'] {
+  background: #e2e8f0;
+  color: var(--muted);
+}
+.step-line {
+  width: 18px;
+  height: 2px;
+  background: #e2e8f0;
+  margin-left: 4px;
+}
+
+/* Avatars sitting on the indigo hero: the per-customer colour would be
+   unreadable there, so they become frosted glass instead. */
+.avatar-on-dark {
+  border: 1px solid rgba(255, 255, 255, 0.35);
+}
+.avatar-on-dark .mantine-Avatar-placeholder {
+  background: rgba(255, 255, 255, 0.22);
+  color: #fff;
 }
