@@ -24,10 +24,11 @@ now on.
 
 ## The main screen
 
-- **Add** and **Scan pass** — the two buttons at the top. Scan is the quickest
-  way to serve someone: point the camera at their QR code. Add sets up a new
-  customer.
-- **The search box** below them narrows the list as you type. A first name, part
+- **Add customer** — the wide button at the top. Sets up someone new.
+- **The round scan button** at the bottom right, just above the menu bar. This
+  is the quickest way to serve someone: tap it and point the camera at their
+  QR code.
+- **The search box** narrows the list as you type. A first name, part
   of a surname, or a phone number all work.
 - **All / Low / Finished** show everyone, people with only 1 or 2 meals left,
   and people who have run out. Use **Low** and **Finished** to see who is due
@@ -42,7 +43,8 @@ now on.
 
 Two ways, both ending on the same screen:
 
-- **Scan pass**, point the camera at their QR code, or
+- tap the **round scan button** at the bottom right and point the camera at
+  their QR code, or
 - **tap their name** in the list.
 
 Their page opens, with their name and how many meals they have left. Check it
@@ -71,7 +73,7 @@ some other reason. It asks for a written reason.)*
 
 ## Adding a new customer
 
-Tap **Add** at the top of the main screen, then:
+Tap **Add customer** at the top of the main screen, then:
 
 1. **Type their name.** Use a full name or a nickname — something that tells
    two customers apart. If the name is already taken the box turns red and
@@ -90,8 +92,8 @@ Tap **Add** at the top of the main screen, then:
 Every customer gets a QR code. It is just a quicker way to find them than
 typing a name — handy when the counter is busy.
 
-To use it, tap **Scan pass** at the top of the main screen and point the
-camera at their code. Their name and how many meals they have left come up; check it is
+To use it, tap the **round scan button** at the bottom right of the main
+screen and point the camera at their code. Their name and how many meals they have left come up; check it is
 the right person, then tap **Use**.
 
 You can see or re-share anyone's pass from their page: **QR code**.

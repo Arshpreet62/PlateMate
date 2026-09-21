@@ -147,8 +147,9 @@ body {
 }
 
 /* Keep bottom toasts above the floating nav */
+/* Above the floating scan button, not behind it */
 .mantine-Notifications-root[data-position='bottom-center'] {
-  bottom: calc(var(--nav-h) + 24px + env(safe-area-inset-bottom));
+  bottom: calc(var(--nav-h) + 96px + env(safe-area-inset-bottom));
 }
 
 /* Empty toast containers must never intercept taps */
@@ -226,11 +227,23 @@ body {
   margin-left: 4px;
 }
 
-/* Add and Scan share the top of the counter screen */
-.action-row .mantine-Button-root {
-  height: 66px;
-  font-size: 19px;
+/* Adding a customer: the deliberate action, full width at the top */
+.add-cta {
+  height: 66px !important;
+  font-size: 20px !important;
   letter-spacing: 0.2px;
+}
+
+/* Scanning: the reflex action, under the thumb and clear of the nav bar */
+.scan-fab {
+  position: fixed;
+  right: 16px;
+  bottom: calc(var(--nav-h) + 22px + env(safe-area-inset-bottom));
+  z-index: 21;
+  box-shadow: 0 8px 22px rgba(79, 70, 229, 0.4) !important;
+}
+.scan-fab:active {
+  transform: translateY(1px);
 }
 
 /* The one action that spends a meal: full width, unmissable, nothing beside it */

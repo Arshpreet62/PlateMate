@@ -143,9 +143,10 @@ file is rejected with a clear message rather than restored into the wrong shape.
   balance** remains for corrections that are not a straight reversal.
 - **New customer** = name → plan → QR pass, in one flow. A name clash appears
   while it is being typed; similar names show a non-blocking hint.
-- **Passes**: each customer gets a QR, shareable as an image. **Add** and
-  **Scan pass** sit together at the top of the counter screen, Scan the wider
-  of the two. A leaked pass can be replaced.
+- **Passes**: each customer gets a QR, shareable as an image. Scanning is a
+  round floating button at the bottom right of the counter screen, under the
+  thumb; **Add customer** is the full-width button at the top. A leaked pass
+  can be replaced.
 - **Backup**: Menu → Backup downloads the whole database as one JSON file, and
   restores from it.
 
@@ -179,3 +180,5 @@ file is rejected with a clear message rather than restored into the wrong shape.
 - **v1.2** — undo moved from the toast to the history row and no longer
   expires; the "how many people are eating" stepper is gone (one tap is one
   meal); Add and Scan pass share one row at the top; the icon is a plate
+- **v1.3** — **Add customer** is a full-width button at the top; **Scan** is a
+  round floating button at the bottom right, above the menu bar

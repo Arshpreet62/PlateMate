@@ -67,31 +67,22 @@ export function CustomerList() {
   return (
     <Layout>
       <Stack gap="md">
-        {/* The two things the counter starts from, side by side at the top.
-            Scan is the wider, filled one: it is the fast path when someone
-            walks up with their pass already open. */}
-        <Group gap="xs" wrap="nowrap" className="action-row">
-          <Button
-            component={Link}
-            to="/customers/new"
-            variant="light"
-            leftSection={<IconPlus size={22} />}
-            style={{ flex: 4 }}
-          >
-            Add
-          </Button>
-          <Button
-            component={Link}
-            to="/scan"
-            leftSection={<IconQrcode size={28} stroke={1.9} />}
-            style={{ flex: 6 }}
-          >
-            Scan pass
-          </Button>
-        </Group>
+        {/* Adding someone is a deliberate, occasional job, so it starts at
+            the top of the screen. Scanning is a reflex with the phone already
+            in hand, so it lives under the thumb (below the list). */}
+        <Button
+          component={Link}
+          to="/customers/new"
+          size="xl"
+          fullWidth
+          className="add-cta"
+          leftSection={<IconPlus size={24} />}
+        >
+          Add customer
+        </Button>
 
         <TextInput
-          placeholder="or search by name or phone"
+          placeholder="Search name or phone"
           value={query}
           onChange={(e) => setQuery(e.currentTarget.value)}
           size="lg"
@@ -138,16 +129,30 @@ export function CustomerList() {
             ) : (
               <>
                 <Text fw={600} mb={4}>No customers yet</Text>
-                <Text c="dimmed" size="sm">Tap <b>Add</b> above to set up the first person.</Text>
+                <Text c="dimmed" size="sm">Tap <b>Add customer</b> above to set up the first person.</Text>
               </>
             )}
           </Card>
         ) : (
           <Stack gap="xs">
             {shown.map((c) => <CustomerRow key={c.id} customer={c} />)}
+            {/* The floating scan button lands exactly where the last row's
+                balance sits, so leave it somewhere to scroll past. */}
+            <Box h={56} />
           </Stack>
         )}
       </Stack>
+
+      <ActionIcon
+        component={Link}
+        to="/scan"
+        className="scan-fab"
+        size={64}
+        radius="xl"
+        aria-label="Scan pass"
+      >
+        <IconQrcode size={32} stroke={1.9} />
+      </ActionIcon>
     </Layout>
   )
 }
