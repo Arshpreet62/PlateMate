@@ -7,7 +7,7 @@ import { countCustomers } from '../db/customers.js'
 import { getSetting } from '../db/packs.js'
 import { requestPersistence } from '../db/schema.js'
 
-const VERSION = '1.0'
+const VERSION = '1.1'
 
 function Row({ to, icon: Icon, title, subtitle, badge }) {
   return (
@@ -57,7 +57,7 @@ export function MenuPage() {
     <Layout title="Menu">
       <Stack gap="md">
         <Card withBorder padding={0}>
-          <Row to="/menu/plans" icon={IconTag} title="Plans & prices" subtitle="What you sell and what it costs" />
+          <Row to="/menu/plans" icon={IconTag} title="Plans" subtitle="What you sell, and how many meals each gives" />
         </Card>
 
         <Card withBorder padding={0}>

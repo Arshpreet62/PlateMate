@@ -1,13 +1,10 @@
-import { ActionIcon, Box, Button, Card, Drawer, Group, Loader, Stack, Text, TextInput, UnstyledButton } from '@mantine/core'
+import { ActionIcon, Box, Button, Card, Group, Loader, Stack, Text, TextInput, UnstyledButton } from '@mantine/core'
 import { IconPlus, IconQrcode, IconSearch, IconUserPlus, IconX } from '@tabler/icons-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { BalancePill, CustomerAvatar, customerHint } from '../components/CustomerBits.jsx'
+import { CustomerAvatar, customerHint } from '../components/CustomerBits.jsx'
 import { Layout } from '../components/Layout.jsx'
-import { Stepper } from '../components/Stepper.jsx'
 import { filterCustomers, listCustomers } from '../db/customers.js'
-import { deductEntries } from '../entries.jsx'
-import { useAction } from '../useAction.js'
 
 const FILTERS = [
   { key: 'all', label: 'All', match: () => true },
@@ -15,39 +12,30 @@ const FILTERS = [
   { key: 'finished', label: 'Finished', match: (c) => c.credits <= 0 },
 ]
 
-function CustomerRow({ customer, busy, onUse, onMore }) {
+// Rows do nothing but open the customer. Nothing here can spend an entry: a
+// misplaced thumb on a list is far too easy, so a deduction always costs a tap
+// into the person's own page where their name and balance are in full view.
+function CustomerRow({ customer }) {
   const navigate = useNavigate()
+  const finished = customer.credits <= 0
   return (
-    <Card withBorder padding="sm" className="tap-row">
+    <UnstyledButton
+      className="tap-row customer-row"
+      onClick={() => navigate(`/customers/${customer.id}`)}
+      aria-label={`${customer.name}, ${customer.credits} entries left`}
+    >
       <Group wrap="nowrap" gap="sm">
-        <UnstyledButton onClick={() => navigate(`/customers/${customer.id}`)} style={{ flex: 1, minWidth: 0 }}>
-          <Group wrap="nowrap" gap="sm">
-            <CustomerAvatar name={customer.name} />
-            <Box style={{ flex: 1, minWidth: 0 }}>
-              <Text fw={700} size="lg" truncate>{customer.name}</Text>
-              <Group gap={6} wrap="nowrap" mt={2}>
-                <BalancePill credits={customer.credits} size="sm" />
-                <Text size="sm" c="dimmed" truncate>{customerHint(customer)}</Text>
-              </Group>
-            </Box>
-          </Group>
-        </UnstyledButton>
-        {customer.credits > 0 ? (
-          <Stack gap={2} align="stretch">
-            <Button size="md" loading={busy} onClick={onUse}>Use 1</Button>
-            {customer.credits > 1 && (
-              <Button size="compact-sm" variant="transparent" color="gray" fw={500} onClick={onMore}>
-                more people
-              </Button>
-            )}
-          </Stack>
-        ) : (
-          <Button size="md" variant="light" component={Link} to={`/customers/${customer.id}?topup=1`}>
-            Renew
-          </Button>
-        )}
+        <CustomerAvatar name={customer.name} />
+        <Box style={{ flex: 1, minWidth: 0 }}>
+          <Text fw={700} size="lg" truncate>{customer.name}</Text>
+          <Text size="sm" c="dimmed" truncate>{customerHint(customer)}</Text>
+        </Box>
+        <Box className="row-balance" data-finished={finished || undefined} data-low={(!finished && customer.credits <= 2) || undefined}>
+          <Text className="row-balance-number">{customer.credits}</Text>
+          <Text className="row-balance-label">{finished ? 'none' : 'left'}</Text>
+        </Box>
       </Group>
-    </Card>
+    </UnstyledButton>
   )
 }
 
@@ -55,10 +43,6 @@ export function CustomerList() {
   const [customers, setCustomers] = useState(null)
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState('all')
-  const [group, setGroup] = useState(null) // customer chosen for a multi-person deduction
-  const [count, setCount] = useState(1)
-  const [busyId, setBusyId] = useState(null) // which row shows a spinner
-  const { run } = useAction()
 
   const load = useCallback(() => {
     listCustomers().then(setCustomers).catch(() => setCustomers([]))
@@ -73,28 +57,6 @@ export function CustomerList() {
     return filterCustomers(customers.filter(match), query)
   }, [customers, filter, query])
 
-  // Patch the one row rather than reloading the whole list, so the number
-  // changes under the finger with no flicker. lastVisitAt is left to the next
-  // full load: guessing it here would be wrong after an undo.
-  const patch = (updated) =>
-    setCustomers((list) => list?.map((c) => (c.id === updated.id ? { ...c, credits: updated.credits } : c)) ?? list)
-
-  const spend = (customer, n) =>
-    run(async () => {
-      setBusyId(customer.id)
-      try {
-        await deductEntries(customer, n, { onChange: (r) => patch(r.customer) })
-      } finally {
-        setBusyId(null)
-      }
-    })
-
-  const groupUse = async () => {
-    const c = group
-    setGroup(null)
-    await spend(c, count)
-  }
-
   const counts = useMemo(
     () => Object.fromEntries(FILTERS.map((f) => [f.key, customers?.filter(f.match).length ?? 0])),
     [customers],
@@ -105,22 +67,31 @@ export function CustomerList() {
   return (
     <Layout>
       <Stack gap="md">
+        {/* Scanning the pass is the fast path at a busy counter, so it gets the
+            top of the screen rather than an icon tucked inside the search box. */}
+        <Button
+          component={Link}
+          to="/scan"
+          size="xl"
+          fullWidth
+          className="scan-cta"
+          leftSection={<IconQrcode size={30} stroke={1.9} />}
+        >
+          Scan pass
+        </Button>
+
         <TextInput
-          placeholder="Search name or phone"
+          placeholder="or search by name or phone"
           value={query}
           onChange={(e) => setQuery(e.currentTarget.value)}
-          size="xl"
+          size="lg"
           radius="xl"
           className="search-pill"
-          leftSection={<IconSearch size={22} />}
+          leftSection={<IconSearch size={20} />}
           rightSection={
-            cleanQuery ? (
+            cleanQuery && (
               <ActionIcon variant="subtle" color="gray" onClick={() => setQuery('')} aria-label="Clear">
                 <IconX size={20} />
-              </ActionIcon>
-            ) : (
-              <ActionIcon variant="subtle" color="gray" component={Link} to="/scan" aria-label="Scan a pass">
-                <IconQrcode size={22} />
               </ActionIcon>
             )
           }
@@ -164,38 +135,14 @@ export function CustomerList() {
           </Card>
         ) : (
           <Stack gap="xs">
-            {shown.map((c) => (
-              <CustomerRow
-                key={c.id}
-                customer={c}
-                busy={busyId === c.id}
-                onUse={() => spend(c, 1)}
-                onMore={() => { setCount(2); setGroup(c) }}
-              />
-            ))}
+            {shown.map((c) => <CustomerRow key={c.id} customer={c} />)}
           </Stack>
         )}
       </Stack>
 
-      <Button
-        className="fab"
-        component={Link}
-        to="/customers/new"
-        leftSection={<IconPlus size={22} />}
-        size="lg"
-      >
+      <Button className="fab" component={Link} to="/customers/new" leftSection={<IconPlus size={22} />} size="lg">
         Add
       </Button>
-
-      <Drawer opened={!!group} onClose={() => setGroup(null)} title={group ? `${group.name} — how many people?` : ''}>
-        {group && (
-          <Stack pb="md">
-            <Stepper value={count} onChange={setCount} min={1} max={group.credits} />
-            <Text c="dimmed" ta="center" size="sm">{group.credits} left now → {group.credits - count} after</Text>
-            <Button size="xl" onClick={groupUse}>Use {count} entries</Button>
-          </Stack>
-        )}
-      </Drawer>
     </Layout>
   )
 }

@@ -9,7 +9,6 @@ import { BrowserRouter } from 'react-router-dom'
 import App from './App.jsx'
 import { requestPersistence, seed } from './db/schema.js'
 import './index.css'
-import { SettingsProvider } from './settings.jsx'
 import { theme } from './theme.js'
 
 // Plain markup, no React and no Mantine: this has to render even when the
@@ -35,7 +34,7 @@ function showStorageFailure(error) {
 }
 
 try {
-  // Fills in the default plans and prices the first time the app is opened on
+  // Fills in the default plans the first time the app is opened on
   // a device. Nothing here talks to a network.
   await seed()
 } catch (error) {
@@ -53,9 +52,7 @@ createRoot(document.getElementById('root')).render(
       <Notifications position="bottom-center" limit={1} autoClose={3500} />
       <ModalsProvider>
         <BrowserRouter>
-          <SettingsProvider>
-            <App />
-          </SettingsProvider>
+          <App />
         </BrowserRouter>
       </ModalsProvider>
     </MantineProvider>

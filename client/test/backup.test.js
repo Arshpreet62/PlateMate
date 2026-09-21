@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { backupFileName, exportBackup, importBackup } from '../src/db/backup.js'
 import { spendEntries, topup, undoEntry } from '../src/db/credits.js'
 import { getCustomer, listCustomers } from '../src/db/customers.js'
-import { listPacks, updateSettings } from '../src/db/packs.js'
+import { listPacks } from '../src/db/packs.js'
 import { customerWith, db, packNamed, resetForTests } from './helpers.js'
 
 beforeEach(resetForTests)
@@ -12,7 +12,6 @@ async function aFullDatabase() {
   const pack = await packNamed('Week plan')
   await topup(customer.id, { packId: pack.id })
   await spendEntries(customer.id, { count: 2 })
-  await updateSettings({ customPriceBelow: 95 })
   return customer
 }
 
@@ -33,7 +32,6 @@ describe('backup round trip', () => {
     expect(restored.credits).toBe(3)
     expect(restored.transactions).toHaveLength(2)
     expect((await listPacks())).toHaveLength(2)
-    expect((await db.settings.get(1)).customPriceBelow).toBe(95)
   })
 
   // JSON turns Dates into strings. undoEntry calls createdAt.getTime(), so if

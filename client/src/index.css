@@ -227,6 +227,58 @@ body {
   margin-left: 4px;
 }
 
+/* The scan button owns the top of the counter screen */
+.scan-cta {
+  height: 68px !important;
+  font-size: 21px !important;
+  letter-spacing: 0.2px;
+}
+
+/* Whole-row target: a customer row only ever opens the customer */
+.customer-row {
+  display: block;
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: var(--mantine-radius-lg);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  text-align: left;
+}
+
+/* The balance replaces the old Use button, so the number sits where the thumb
+   used to land — readable at a glance, and impossible to tap by accident. */
+.row-balance {
+  flex: none;
+  min-width: 62px;
+  text-align: center;
+  padding: 6px 10px;
+  border-radius: 14px;
+  background: #ecfdf5;
+  color: #047857;
+}
+.row-balance[data-low] {
+  background: #fffbeb;
+  color: #b45309;
+}
+.row-balance[data-finished] {
+  background: #f1f5f9;
+  color: #64748b;
+}
+.row-balance-number {
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+.row-balance-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  opacity: 0.85;
+}
+
 /* Avatars sitting on the indigo hero: the per-customer colour would be
    unreadable there, so they become frosted glass instead. */
 .avatar-on-dark {

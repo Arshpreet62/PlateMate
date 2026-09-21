@@ -30,9 +30,9 @@ export function TopupModal({ opened, onClose, customer, onDone }) {
   return (
     <Drawer opened={opened} onClose={onClose} title={`${customer.credits > 0 ? 'Add a plan' : 'Renew plan'} — ${customer.name}`}>
       <Stack pb="md">
-        {opened && <PlanPicker value={plan} onChange={setPlan} />}
+        {opened && <PlanPicker value={plan} onChange={setPlan} currentCredits={customer.credits} />}
         <Button size="xl" loading={busy} onClick={submit} disabled={!plan}>
-          {plan ? `Start ${plan.name ?? `${plan.credits} entries`}` : 'Pick a plan'}
+          {plan ? `Add ${plan.name ?? `${plan.credits} entries`}` : 'Pick a plan'}
         </Button>
       </Stack>
     </Drawer>

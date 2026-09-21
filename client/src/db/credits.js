@@ -11,11 +11,6 @@ export async function getSetting() {
   return (await db.settings.get(1)) ?? DEFAULT_SETTINGS
 }
 
-export function customPrice(setting, credits) {
-  const perEntry = credits >= setting.customThreshold ? setting.customPriceAtAbove : setting.customPriceBelow
-  return credits * perEntry
-}
-
 function positiveInt(value) {
   const n = Number(value)
   return Number.isInteger(n) && n > 0 ? n : null
@@ -40,38 +35,26 @@ async function applyChange(customerId, data) {
   })
 }
 
-export async function topup(customerId, { packId, credits, amount, note }) {
+export async function topup(customerId, { packId, credits, note }) {
   let creditsToAdd
-  let price
   let packName
 
   if (packId != null) {
     const pack = await db.packs.get(Number(packId))
     if (!pack || !pack.active) throw new CreditError(400, 'Plan not found')
     creditsToAdd = pack.credits
-    price = pack.price
     packName = pack.name
   } else {
     creditsToAdd = positiveInt(credits)
     if (!creditsToAdd) throw new CreditError(400, 'Entries must be a positive whole number')
-    price = customPrice(await getSetting(), creditsToAdd)
     packName = 'Custom'
-  }
-
-  const cleanNote = note ? String(note).trim() : ''
-  if (amount != null && amount !== '') {
-    const n = Number(amount)
-    if (!Number.isInteger(n) || n < 0) throw new CreditError(400, 'Amount must be a whole number')
-    if (n !== price && !cleanNote) throw new CreditError(400, 'A note is required when the amount differs from the standard price')
-    price = n
   }
 
   return applyChange(customerId, {
     type: 'TOPUP',
     delta: creditsToAdd,
-    amount: price,
     packName,
-    note: cleanNote || null,
+    note: note ? String(note).trim() || null : null,
   })
 }
 

@@ -146,7 +146,7 @@ export function NewCustomer() {
               <Title order={3}>{cleanName}</Title>
               <Text c="dimmed" size="sm">Pick the plan they're paying for</Text>
             </div>
-            <PlanPicker value={plan} onChange={setPlan} />
+            <PlanPicker value={plan} onChange={setPlan} currentCredits={0} />
             <Button size="xl" loading={busy} disabled={!plan} onClick={createAndStart}>
               {created ? 'Try again' : plan ? `Start ${plan.name ?? `${plan.credits} entries`}` : 'Pick a plan'}
             </Button>

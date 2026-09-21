@@ -3,6 +3,9 @@
 This is the app you use at the counter. It remembers who has bought a meal
 plan and how many meals they have left.
 
+It does **not** deal with money at all. You take payment the way you always
+have; the app only keeps count of meals.
+
 Everything is kept **on this phone**. It works without internet, and nothing
 is sent to anyone.
 
@@ -21,31 +24,35 @@ now on.
 
 ## The main screen
 
-This is the list of everyone who has a plan. The newest people are at the top.
-
-- **The search box** at the top narrows the list as you type. A first name,
-  part of a surname, or a phone number all work.
+- **Scan pass** — the big button at the top. This is the quickest way to serve
+  someone: point the camera at their QR code.
+- **The search box** below it narrows the list as you type. A first name, part
+  of a surname, or a phone number all work.
 - **All / Low / Finished** show everyone, people with only 1 or 2 meals left,
   and people who have run out. Use **Low** and **Finished** to see who is due
   to buy again.
+- **The list** shows each person and the number of meals they have left. The
+  rows are just for looking and opening — **nothing in the list can use up
+  someone's meal by accident.**
 - The **⊕ Add** button at the bottom right adds a new customer.
-- The small **QR button** inside the search box opens the camera for scanning
-  a customer's pass.
 
 ---
 
 ## When someone comes to eat
 
-Find them in the list and tap **Use 1**.
+Two ways, both ending on the same screen:
 
-That is the whole job. The number next to their name goes down by one, and a
-message appears at the bottom of the screen.
+- **Scan pass**, point the camera at their QR code, or
+- **tap their name** in the list.
 
-**If more than one person is eating on the same plan**, tap **more people**
-under the button instead, choose how many, and confirm.
+Their page opens, with their name and how many meals they have left. Check it
+is the right person, then tap **Use 1 entry**.
 
-**If you tapped the wrong person**, tap **Undo** in that message straight
-away. It stays on screen for about ten seconds.
+**If more than one person is eating on the same plan**, tap **+** to raise the
+number first, then tap the button.
+
+**If you tapped the wrong person**, tap **Undo** in the message at the bottom
+straight away. It stays on screen for about ten seconds.
 
 **If you only notice later**, open the customer, tap the **⋮** at the top
 right, and choose **Adjust balance**. Put in how many to add back (for
@@ -62,8 +69,9 @@ Tap **⊕ Add**, then:
    two customers apart. If the name is already taken the box turns red and
    tells you; add a surname or something like `Guru Sharma (bank)`.
    You can also add a phone number or a note here, but you do not have to.
-2. **Pick the plan they are paying for.** The price is shown on each one. If
-   they want a different number of meals, tap *Other number of entries*.
+2. **Pick the plan they are paying for.** Each one shows how many meals it
+   gives, and underneath you will see the total they end up with. If they want
+   a different number of meals, tap *Custom number of entries*.
 3. **Their QR pass appears.** Tap **Share pass** to send it to them on
    WhatsApp, or let them photograph the screen. Then tap **Done**.
 
@@ -74,8 +82,8 @@ Tap **⊕ Add**, then:
 Every customer gets a QR code. It is just a quicker way to find them than
 typing a name — handy when the counter is busy.
 
-To use it, tap the **QR button** in the search box and point the camera at
-their code. Their name and how many meals they have left come up; check it is
+To use it, tap **Scan pass** at the top of the main screen and point the
+camera at their code. Their name and how many meals they have left come up; check it is
 the right person, then tap **Use**.
 
 You can see or re-share anyone's pass from their page: **QR code**.
@@ -88,17 +96,14 @@ immediately, and you share the new one with them.
 
 ## Changing what you sell
 
-**Menu → Plans & prices.**
+**Menu → Plans.**
 
-- Tap the pencil to change a plan's name, number of meals, or price.
-- The switch next to a plan stops you being offered it, without deleting
-  anything that was already sold.
-- **Add a plan** creates a new one.
-- At the bottom, *Other number of entries* sets the price per meal when
-  someone buys a custom amount.
+- Tap the pencil to change a plan's name or how many meals it gives.
+- The switch next to a plan stops it being offered, without deleting anything
+  that was already sold.
+- **Add a plan** creates a new one — a name and a number of meals.
 
-Changing a price only affects future sales. Anything already sold keeps the
-price it was sold at.
+What each plan costs is up to you at the counter; the app never asks.
 
 ---
 
@@ -139,8 +144,8 @@ the internet at all. Sell plans and tick people in as normal.
 wrong person never gets ticked off. Add a surname, or something like
 `Ravi (taxi)`.
 
-**Nothing shows totals of money taken.** That is on purpose — the screen only
-shows prices while you are actually selling a plan.
+**There is nothing about money anywhere.** That is on purpose. The app counts
+meals; you handle payment however you like.
 
 **The app opened and said it cannot reach its storage.** The phone's browser
 is blocking it. Make sure you are not in Private / Incognito mode, and that

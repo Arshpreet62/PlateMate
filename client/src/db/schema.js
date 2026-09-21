@@ -26,18 +26,16 @@ db.version(1).stores({
   settings: 'id',
 })
 
+// The app counts meals and nothing else — money is settled at the counter and
+// deliberately never enters the database.
 export const DEFAULT_SETTINGS = {
   id: 1,
-  currency: '₹',
-  customThreshold: 22,
-  customPriceBelow: 90,
-  customPriceAtAbove: 80,
   lastBackupAt: null,
 }
 
 const DEFAULT_PACKS = [
-  { name: 'Week plan', credits: 5, price: 450, active: true, sortOrder: 1 },
-  { name: 'Monthly pack', credits: 22, price: 1760, active: true, sortOrder: 2 },
+  { name: 'Week plan', credits: 5, active: true, sortOrder: 1 },
+  { name: 'Monthly pack', credits: 22, active: true, sortOrder: 2 },
 ]
 
 export function normaliseName(name) {

@@ -1,8 +1,12 @@
 # PlateMate
 
-Counter app for a buffet that sells meal passes. Add a customer, sell them a
-plan, and tap once each time they come to eat. Runs as an installable app on
-the owner's phone.
+Counter app for a buffet that sells meal passes. Add a customer, give them a
+plan, and tick off a meal each time they come to eat. Runs as an installable
+app on the owner's phone.
+
+**It counts meals, not money.** There are no prices anywhere in the app —
+payment is settled at the counter, and a plan is simply a name and a number of
+entries.
 
 **There is no server.** The app keeps its own database inside the browser
 (IndexedDB), so it works with the internet switched off, costs nothing to run,
@@ -53,7 +57,7 @@ client/
     schema.js      tables, indexes, seeding, storage persistence
     credits.js     top-ups, entries, adjustments, undo  (the money rules)
     customers.js   create/search/read, unique names
-    packs.js       plans and pricing settings
+    packs.js       plans (name + number of entries)
     qr.js          passes: issue, parse, scan, replace
     backup.js      export/import the whole database as one JSON file
   src/pages/     one file per screen
@@ -65,7 +69,7 @@ client/
 rule is enforced there rather than in a screen, which is why the tests can
 cover the whole business logic without rendering anything.
 
-### Three decisions worth knowing
+### Four decisions worth knowing
 
 **Balances change inside a transaction.** `applyChange` in
 [credits.js](client/src/db/credits.js) re-reads the balance and writes the
@@ -78,6 +82,12 @@ tap charging once and crediting twice.
 **Uniqueness is an index, not a check.** Customers carry a stored `nameLower`
 and a stored `passCode`, both with unique indexes. Duplicate names and
 duplicate passes are impossible at the database level, not merely unlikely.
+
+**A customer row cannot spend an entry.** The list is navigation only; the
+balance sits where a Use button would otherwise be. Deducting always costs a
+tap into the customer's own page, where their name and balance are in full
+view — a stray thumb on a scrolling list must never be able to take someone's
+meal.
 
 **Passes point at a `passCode`, not at the customer id.** That is what makes
 **Replace pass** possible: issue a new code and every photo of the old one
@@ -111,20 +121,24 @@ file is rejected with a clear message rather than restored into the wrong shape.
 
 ## What the app does
 
-- **Plans** are edited in the app (Menu → Plans & prices). It ships with
-  **Week plan** (5 entries, ₹450) and **Monthly pack** (22 entries, ₹1760).
-- **Custom top-ups**: ₹90 per entry below 22 entries, ₹80 from 22 up. The
-  prices and the threshold are editable.
+- **Plans** are edited in the app (Menu → Plans). It ships with **Week plan**
+  (5 entries) and **Monthly pack** (22 entries). A plan is a name and a number
+  of entries — nothing else.
+- **Custom top-ups** add any number of entries, for the cases a plan does not
+  cover.
+- **The customer list is read-only.** Rows show the balance and open the
+  customer; entries are only ever spent from the customer's own page or after
+  a scan.
 - **Entries** can be used several at a time and are refused if the balance is
   too low. Undo lives in the toast for 12 seconds; after that **Adjust
   balance** on the customer's page fixes it and records a reason.
 - **New customer** = name → plan → QR pass, in one flow. A name clash appears
   while it is being typed; similar names show a non-blocking hint.
-- **Passes**: each customer gets a QR, shareable as an image, scanned from the
-  icon in the search bar. A leaked one can be replaced.
+- **Passes**: each customer gets a QR, shareable as an image. **Scan pass** is
+  the first thing on the counter screen, since scanning is the fast path. A
+  leaked pass can be replaced.
 - **Backup**: Menu → Backup downloads the whole database as one JSON file, and
   restores from it.
-- **Money** stays off the screen except plan prices while selling.
 
 ## Known limits
 
@@ -148,3 +162,8 @@ file is rejected with a clear message rather than restored into the wrong shape.
   twice; storage failures now explain themselves instead of showing a blank
   screen; undone entries no longer count as visits; full history on request;
   passes can be replaced; backup and restore
+- **v1.1** — money removed from the app entirely; the customer list can no
+  longer spend an entry (balance replaces the Use button, deduct from the
+  customer's page); Scan pass promoted to the top of the counter screen; fixed
+  the plan picker treating a normal plan as a custom one and springing open a
+  stepper at 10 entries

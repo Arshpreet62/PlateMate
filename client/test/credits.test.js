@@ -1,30 +1,43 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { adjust, spendEntries, topup, undoEntry, UNDO_WINDOW_MS } from '../src/db/credits.js'
-import { quote } from '../src/db/packs.js'
 import { customerWith, db, packNamed, resetForTests } from './helpers.js'
 
 beforeEach(resetForTests)
 
 describe('top-ups', () => {
-  it('adds a plan at its listed price', async () => {
+  it('adds the plan\'s entries and records which plan it was', async () => {
     const customer = await customerWith(0)
     const pack = await packNamed('Monthly pack')
     const { customer: after, transaction } = await topup(customer.id, { packId: pack.id })
     expect(after.credits).toBe(22)
-    expect(transaction.amount).toBe(1760)
     expect(transaction.packName).toBe('Monthly pack')
   })
 
-  it('prices custom entries either side of the threshold', async () => {
-    expect(await quote(21)).toEqual({ credits: 21, price: 21 * 90 })
-    expect(await quote(22)).toEqual({ credits: 22, price: 22 * 80 })
+  // The app counts meals only; no amount should ever reach the database.
+  it('records no money anywhere', async () => {
+    const customer = await customerWith(0)
+    const pack = await packNamed('Week plan')
+    await topup(customer.id, { packId: pack.id })
+    const rows = await db.transactions.toArray()
+    expect(rows.every((t) => t.amount === undefined)).toBe(true)
+    const packs = await db.packs.toArray()
+    expect(packs.every((p) => p.price === undefined)).toBe(true)
   })
 
-  it('requires a note when the amount differs from the standard price', async () => {
+  it('adds a custom number of entries', async () => {
     const customer = await customerWith(0)
-    await expect(topup(customer.id, { credits: 5, amount: 300 })).rejects.toThrow(/note is required/)
-    const { transaction } = await topup(customer.id, { credits: 5, amount: 300, note: 'regular, gave a discount' })
-    expect(transaction.amount).toBe(300)
+    const { customer: after, transaction } = await topup(customer.id, { credits: 7 })
+    expect(after.credits).toBe(7)
+    expect(transaction.packName).toBe('Custom')
+    await expect(topup(customer.id, { credits: 0 })).rejects.toThrow(/positive whole number/)
+    await expect(topup(customer.id, { credits: -3 })).rejects.toThrow(/positive whole number/)
+  })
+
+  it('stacks onto what is already there', async () => {
+    const customer = await customerWith(0)
+    const week = await packNamed('Week plan')
+    await topup(customer.id, { packId: week.id })
+    expect((await topup(customer.id, { packId: week.id })).customer.credits).toBe(10)
   })
 
   it('refuses a plan that is not on sale', async () => {
