@@ -1,7 +1,7 @@
 import { ActionIcon, Box, Button, Card, Center, Group, Loader, Menu, Modal, NumberInput, Stack, Text, Textarea, TextInput, Title } from '@mantine/core'
 import { modals } from '@mantine/modals'
 import { notifications } from '@mantine/notifications'
-import { IconAdjustments, IconArrowBackUp, IconDotsVertical, IconPencil, IconPlus, IconQrcode, IconRefreshAlert } from '@tabler/icons-react'
+import { IconAdjustments, IconArrowBackUp, IconCheck, IconDotsVertical, IconPencil, IconPlus, IconQrcode, IconRefreshAlert } from '@tabler/icons-react'
 import { useCallback, useEffect, useState } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import { CustomerAvatar } from '../components/CustomerBits.jsx'
@@ -49,6 +49,7 @@ export function Customer() {
   const [error, setError] = useState(null)
   const [modal, setModal] = useState(params.get('topup') ? 'topup' : null)
   const [showAllHistory, setShowAllHistory] = useState(false)
+  const [justUsed, setJustUsed] = useState(null) // { count, credits } right after a meal
   const { busy, run: guard } = useAction()
   const [adjust, setAdjust] = useState({ delta: 1, note: '' })
   const [edit, setEdit] = useState({ name: '', phone: '', notes: '' })
@@ -77,7 +78,28 @@ export function Customer() {
       }
     })
 
-  const spend = () => guard(() => deductEntries(customer, 1, { onChange: load }))
+  // Confirmation lands on the button itself: it turns green, says what
+  // happened, and is inert for two seconds — which is exactly the window in
+  // which an owner who thought nothing happened taps again. The layout does
+  // not shift, so nothing moves under a finger already coming down.
+  const spend = () =>
+    guard(async () => {
+      const result = await deductEntries(customer, 1, { onChange: load })
+      if (!result) return
+      setJustUsed((prev) => ({
+        count: (prev?.count ?? 0) + 1,
+        credits: result.customer.credits,
+      }))
+    })
+
+  useEffect(() => {
+    // Only arm the timer while the confirmation is still showing — settling
+    // changes justUsed, which re-runs this effect, and without the guard it
+    // would re-arm itself forever.
+    if (!justUsed || justUsed.settled) return undefined
+    const timer = setTimeout(() => setJustUsed((u) => (u ? { ...u, settled: true } : u)), 2000)
+    return () => clearTimeout(timer)
+  }, [justUsed])
 
   // Confirmed, because a stray tap here silently hands out a free meal.
   const confirmUndo = (transaction) =>
@@ -184,8 +206,19 @@ export function Customer() {
         {customer.credits > 0 ? (
           // One tap is one meal. A group of four is four taps, each its own
           // history line, each undoable on its own.
-          <Button size="xl" className="use-cta" loading={busy} onClick={spend}>
-            Use 1 entry
+          <Button
+            size="xl"
+            className="use-cta"
+            data-done={justUsed && !justUsed.settled ? '' : undefined}
+            loading={busy}
+            onClick={justUsed && !justUsed.settled ? undefined : spend}
+            leftSection={justUsed && !justUsed.settled ? <IconCheck size={26} stroke={3} /> : undefined}
+          >
+            {justUsed && !justUsed.settled
+              ? `${justUsed.count} ${justUsed.count === 1 ? 'meal' : 'meals'} used · ${justUsed.credits} left`
+              : justUsed
+                ? 'Use another entry'
+                : 'Use 1 entry'}
           </Button>
         ) : (
           <Button size="xl" leftSection={<IconPlus size={22} />} onClick={() => setModal('topup')}>

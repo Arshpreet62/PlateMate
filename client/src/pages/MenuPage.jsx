@@ -7,7 +7,7 @@ import { countCustomers } from '../db/customers.js'
 import { getSetting } from '../db/packs.js'
 import { requestPersistence } from '../db/schema.js'
 
-const VERSION = '1.3'
+const VERSION = '1.4'
 
 function Row({ to, icon: Icon, title, subtitle, badge }) {
   return (

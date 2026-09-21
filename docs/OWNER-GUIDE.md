@@ -50,8 +50,16 @@ Two ways, both ending on the same screen:
 Their page opens, with their name and how many meals they have left. Check it
 is the right person, then tap **Use 1 entry**.
 
-**If more than one person is eating on the same plan**, tap the button once
-for each person. Four people, four taps.
+**You will see a big green confirmation** saying the meal was taken and how
+many they have left. That is how you know it worked — you do not need to tap
+again, and for a moment the button will not respond, so a second tap by
+mistake cannot take a second meal.
+
+**If more than one person is eating on the same plan**, wait for the button to
+turn back to **Use another entry**, then tap it once for each extra person.
+
+After a scan the whole screen turns green instead, with **Scan next** for the
+following customer.
 
 ---
 

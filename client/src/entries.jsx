@@ -1,24 +1,24 @@
 import { notifications } from '@mantine/notifications'
 import { spendEntries } from './db/credits.js'
 
+// Two pulses, not one: after a meal is taken the screen changes too, but a
+// buzz that is distinct from every other tap is one more channel saying it
+// worked.
 export function vibrate(pattern = 40) {
   try { navigator.vibrate?.(pattern) } catch { /* unsupported */ }
 }
 
-// Deducts an entry and confirms it briefly. There is no Undo in here any more:
-// a toast that has to be caught before it disappears is the wrong home for the
-// one action that takes a mistake back, and it sat in the way of the next
-// customer. Undo lives on the history row instead, where it can be found on
-// purpose and never expires.
+// Deducts an entry. There is deliberately no success toast: a bar at the
+// bottom of the screen, under the hand holding the phone, was being missed,
+// and an owner who thinks the tap failed taps again and takes a second meal.
+// Confirmation now belongs to the screen the tap happened on, which can show
+// it where the thumb already is. Errors keep a toast — they have no in-place
+// home, and the screen has not changed.
 export async function deductEntries(customer, count = 1, { onChange } = {}) {
   try {
     const result = await spendEntries(customer.id, { count })
-    vibrate()
+    vibrate([35, 45, 35])
     onChange?.(result)
-    notifications.show({
-      color: 'green',
-      message: `${customer.name} — ${count === 1 ? '1 entry' : `${count} entries`} used · ${result.customer.credits} left`,
-    })
     return result
   } catch (err) {
     vibrate([60, 40, 60])

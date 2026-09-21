@@ -138,6 +138,10 @@ file is rejected with a clear message rather than restored into the wrong shape.
   a scan.
 - **One tap is one meal.** A group of four is four taps, each its own history
   line. Entries are refused when the balance is too low.
+- **A served meal confirms in place, not in a toast.** The scan screen is
+  replaced by a green panel with the name, meals used and the new balance, and
+  no Use button is left on it; on the customer page the button itself turns
+  green for two seconds, then reads *Use another entry*.
 - **Undo lives on the history row**, not in a popup, and never expires. It
   writes a visible `Undo entry` line rather than erasing anything. **Adjust
   balance** remains for corrections that are not a straight reversal.
@@ -182,3 +186,7 @@ file is rejected with a clear message rather than restored into the wrong shape.
   meal); Add and Scan pass share one row at the top; the icon is a plate
 - **v1.3** — **Add customer** is a full-width button at the top; **Scan** is a
   round floating button at the bottom right, above the menu bar
+- **v1.4** — fixed meals being served two or three times: the confirmation was
+  a toast at the bottom of the screen and was being missed, so an owner who
+  thought the tap failed tapped again. Confirmation is now in place on both
+  screens, and the scan screen leaves no Use button to tap twice

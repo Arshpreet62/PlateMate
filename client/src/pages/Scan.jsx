@@ -1,4 +1,5 @@
-import { Box, Button, Card, Group, Stack, Text, Title } from '@mantine/core'
+import { Box, Button, Card, Group, Stack, Text, ThemeIcon, Title } from '@mantine/core'
+import { IconCheck } from '@tabler/icons-react'
 import { Html5Qrcode } from 'html5-qrcode'
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
@@ -12,7 +13,8 @@ const REGION_ID = 'qr-reader'
 
 export function Scan() {
   const scannerRef = useRef(null)
-  const [phase, setPhase] = useState('starting') // starting | scanning | checking | found | invalid | error
+  const [phase, setPhase] = useState('starting') // starting | scanning | checking | found | used | invalid | error
+  const [usedCount, setUsedCount] = useState(0)
   const [customer, setCustomer] = useState(null)
   const [message, setMessage] = useState('')
   const { busy, run } = useAction()
@@ -31,6 +33,7 @@ export function Scan() {
 
   const start = async () => {
     setCustomer(null)
+    setUsedCount(0)
     setPhase('starting')
     await stop()
     const scanner = new Html5Qrcode(REGION_ID, { verbose: false })
@@ -76,9 +79,17 @@ export function Scan() {
   }, [])
 
   const spend = () =>
-    run(() => deduct(customer, 1, { onChange: (r) => setCustomer((c) => ({ ...c, credits: r.customer.credits })) }))
+    run(async () => {
+      const result = await deduct(customer, 1, {
+        onChange: (r) => setCustomer((c) => ({ ...c, credits: r.customer.credits })),
+      })
+      if (!result) return
+      setUsedCount((n) => n + 1)
+      setPhase('used')
+    })
 
   const showCamera = phase === 'starting' || phase === 'scanning'
+  const meals = (n) => `${n} ${n === 1 ? 'meal' : 'meals'}`
 
   return (
     <Layout title="Scan pass" back>
@@ -124,6 +135,39 @@ export function Scan() {
               </Group>
             </Stack>
           </Card>
+        )}
+
+        {/* The whole point of this screen state: once a meal is taken there is
+            no Use button left to tap a second time by mistake. Serving another
+            person on the same pass is a differently-worded, secondary action. */}
+        {phase === 'used' && customer && (
+          <Stack>
+            <Box className="result-panel">
+              <ThemeIcon size={64} radius="xl" className="result-tick">
+                <IconCheck size={40} stroke={3} />
+              </ThemeIcon>
+              <Title order={3} ta="center" mt="sm" lineClamp={2}>{customer.name}</Title>
+              <Text fw={700} size="lg" ta="center">{meals(usedCount)} used</Text>
+              <Text className="result-balance">{customer.credits}</Text>
+              <Text className="result-balance-label">
+                {customer.credits === 0 ? 'plan finished' : customer.credits === 1 ? 'meal left' : 'meals left'}
+              </Text>
+            </Box>
+
+            <Button size="xl" className="use-cta" onClick={start}>Scan next</Button>
+
+            {customer.credits > 0 ? (
+              <Button variant="light" size="lg" loading={busy} onClick={spend}>
+                Use another entry
+              </Button>
+            ) : (
+              <Text c="dimmed" ta="center" size="sm">Their plan is finished — add a new one from their page.</Text>
+            )}
+
+            <Button variant="subtle" color="gray" component={Link} to={`/customers/${customer.id}`}>
+              Open profile
+            </Button>
+          </Stack>
         )}
       </Stack>
     </Layout>
