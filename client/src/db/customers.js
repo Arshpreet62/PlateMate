@@ -29,13 +29,18 @@ function validateDetails(body, { partial = false } = {}) {
   return { data: out }
 }
 
-// One pass over the entry log; cheaper than a query per customer. An entry
-// that was undone never happened, so it must not count as a visit — the
-// reversalOfId index holds only the reversal rows, because IndexedDB leaves
-// records without that property out of the index entirely.
-async function lastVisitMap() {
+// Which entries have been undone. The reversalOfId index holds only the
+// reversal rows, because IndexedDB leaves records missing that property out of
+// the index entirely — so this reads a handful of rows, not the whole log.
+async function reversedIds() {
   const reversals = await db.transactions.where('reversalOfId').aboveOrEqual(0).toArray()
-  const undone = new Set(reversals.map((t) => t.reversalOfId))
+  return new Set(reversals.map((t) => t.reversalOfId))
+}
+
+// One pass over the entry log; cheaper than a query per customer. An entry
+// that was undone never happened, so it must not count as a visit.
+async function lastVisitMap() {
+  const undone = await reversedIds()
   const map = new Map()
   await db.transactions.where('type').equals('ENTRY').each((t) => {
     if (undone.has(t.id)) return
@@ -88,7 +93,14 @@ export async function getCustomer(id, { limit = 20 } = {}) {
     .between([id, Dexie.minKey], [id, Dexie.maxKey])
     .reverse()
   if (limit != null) query = query.limit(limit)
-  const [transactions, transactionCount] = await Promise.all([query.toArray(), countTransactions(id)])
+  const [rows, transactionCount, undone] = await Promise.all([
+    query.toArray(),
+    countTransactions(id),
+    reversedIds(),
+  ])
+  // The history is where an entry gets taken back, so each row has to say
+  // whether that is still possible.
+  const transactions = rows.map((t) => ({ ...t, undone: undone.has(t.id) }))
   return { ...customer, transactions, transactionCount, qr: qrCode(customer) }
 }
 

@@ -24,9 +24,10 @@ now on.
 
 ## The main screen
 
-- **Scan pass** — the big button at the top. This is the quickest way to serve
-  someone: point the camera at their QR code.
-- **The search box** below it narrows the list as you type. A first name, part
+- **Add** and **Scan pass** — the two buttons at the top. Scan is the quickest
+  way to serve someone: point the camera at their QR code. Add sets up a new
+  customer.
+- **The search box** below them narrows the list as you type. A first name, part
   of a surname, or a phone number all work.
 - **All / Low / Finished** show everyone, people with only 1 or 2 meals left,
   and people who have run out. Use **Low** and **Finished** to see who is due
@@ -34,7 +35,6 @@ now on.
 - **The list** shows each person and the number of meals they have left. The
   rows are just for looking and opening — **nothing in the list can use up
   someone's meal by accident.**
-- The **⊕ Add** button at the bottom right adds a new customer.
 
 ---
 
@@ -48,22 +48,30 @@ Two ways, both ending on the same screen:
 Their page opens, with their name and how many meals they have left. Check it
 is the right person, then tap **Use 1 entry**.
 
-**If more than one person is eating on the same plan**, tap **+** to raise the
-number first, then tap the button.
+**If more than one person is eating on the same plan**, tap the button once
+for each person. Four people, four taps.
 
-**If you tapped the wrong person**, tap **Undo** in the message at the bottom
-straight away. It stays on screen for about ten seconds.
+---
 
-**If you only notice later**, open the customer, tap the **⋮** at the top
-right, and choose **Adjust balance**. Put in how many to add back (for
-example `1`) and a short reason, like `tapped by mistake`. The correction is
-saved in their history so you can see what happened later.
+## If you tapped the wrong person
+
+Scroll down to **History** on that customer's page. Every meal is listed with
+the time it was taken. Tap the **↩ button** next to the wrong one and confirm.
+
+The meal goes back on their pass straight away. There is **no time limit** —
+you can put back something from this morning or from last week. The row then
+shows as *undone*, and a line is added saying it was put back, so the record
+always shows what really happened.
+
+*(**Adjust balance**, under the **⋮** menu at the top right, is for corrections
+that are not simply undoing a meal — for example if a balance is wrong for
+some other reason. It asks for a written reason.)*
 
 ---
 
 ## Adding a new customer
 
-Tap **⊕ Add**, then:
+Tap **Add** at the top of the main screen, then:
 
 1. **Type their name.** Use a full name or a nickname — something that tells
    two customers apart. If the name is already taken the box turns red and

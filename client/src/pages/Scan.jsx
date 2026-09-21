@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { BalancePill, CustomerAvatar } from '../components/CustomerBits.jsx'
 import { Layout } from '../components/Layout.jsx'
-import { Stepper } from '../components/Stepper.jsx'
 import { scan } from '../db/qr.js'
 import { deductEntries as deduct, vibrate } from '../entries.jsx'
 import { useAction } from '../useAction.js'
@@ -16,7 +15,6 @@ export function Scan() {
   const [phase, setPhase] = useState('starting') // starting | scanning | checking | found | invalid | error
   const [customer, setCustomer] = useState(null)
   const [message, setMessage] = useState('')
-  const [count, setCount] = useState(1)
   const { busy, run } = useAction()
 
   const stop = async () => {
@@ -33,7 +31,6 @@ export function Scan() {
 
   const start = async () => {
     setCustomer(null)
-    setCount(1)
     setPhase('starting')
     await stop()
     const scanner = new Html5Qrcode(REGION_ID, { verbose: false })
@@ -79,10 +76,7 @@ export function Scan() {
   }, [])
 
   const spend = () =>
-    run(async () => {
-      await deduct(customer, count, { onChange: (r) => setCustomer((c) => ({ ...c, credits: r.customer.credits })) })
-      setCount(1)
-    })
+    run(() => deduct(customer, 1, { onChange: (r) => setCustomer((c) => ({ ...c, credits: r.customer.credits })) }))
 
   const showCamera = phase === 'starting' || phase === 'scanning'
 
@@ -119,10 +113,9 @@ export function Scan() {
                 </Box>
                 <BalancePill credits={customer.credits} size="xl" />
               </Group>
-              <Text size="sm" c="dimmed" ta="center">Check this is the right person, then choose how many are eating.</Text>
-              <Stepper value={count} onChange={setCount} max={Math.max(1, customer.credits)} />
-              <Button size="xl" loading={busy} disabled={customer.credits < count} onClick={spend}>
-                Use {count} {count === 1 ? 'entry' : 'entries'}
+              <Text size="sm" c="dimmed" ta="center">Check this is the right person, then tap Use.</Text>
+              <Button size="xl" className="use-cta" loading={busy} disabled={customer.credits < 1} onClick={spend}>
+                Use 1 entry
               </Button>
               {customer.credits < 1 && <Text c="red" ta="center" size="sm">No entries left — add a plan first</Text>}
               <Group grow>

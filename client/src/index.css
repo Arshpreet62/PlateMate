@@ -97,6 +97,14 @@ body {
   border-top: 1px solid var(--line);
 }
 
+/* A reversed entry stays in the record but reads as cancelled */
+[data-undone] .balance-pill {
+  text-decoration: line-through;
+}
+[data-undone] {
+  opacity: 0.55;
+}
+
 /* Sticky header with blur */
 .app-header {
   position: sticky;
@@ -136,15 +144,6 @@ body {
 .nav-item[data-active] {
   color: var(--brand);
   background: var(--brand-soft);
-}
-
-/* Add button, clear of the nav and the toasts */
-.fab {
-  position: fixed;
-  right: 16px;
-  bottom: calc(var(--nav-h) + 22px + env(safe-area-inset-bottom));
-  z-index: 21;
-  box-shadow: 0 8px 22px rgba(79, 70, 229, 0.35) !important;
 }
 
 /* Keep bottom toasts above the floating nav */
@@ -227,11 +226,17 @@ body {
   margin-left: 4px;
 }
 
-/* The scan button owns the top of the counter screen */
-.scan-cta {
-  height: 68px !important;
-  font-size: 21px !important;
+/* Add and Scan share the top of the counter screen */
+.action-row .mantine-Button-root {
+  height: 66px;
+  font-size: 19px;
   letter-spacing: 0.2px;
+}
+
+/* The one action that spends a meal: full width, unmissable, nothing beside it */
+.use-cta {
+  height: 72px !important;
+  font-size: 23px !important;
 }
 
 /* Whole-row target: a customer row only ever opens the customer */

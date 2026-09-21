@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { adjust, spendEntries, topup, undoEntry, UNDO_WINDOW_MS } from '../src/db/credits.js'
+import { adjust, spendEntries, topup, undoEntry } from '../src/db/credits.js'
 import { customerWith, db, packNamed, resetForTests } from './helpers.js'
 
 beforeEach(resetForTests)
@@ -75,11 +75,15 @@ describe('undo', () => {
     expect((await db.customers.get(customer.id)).credits).toBe(5)
   })
 
-  it('closes after the undo window', async () => {
+  // Undo lives on the history row now, so it must not expire underneath
+  // someone who is looking straight at it.
+  it('has no time limit', async () => {
     const customer = await customerWith(5)
     const { transaction } = await spendEntries(customer.id, { count: 1 })
-    await db.transactions.update(transaction.id, { createdAt: new Date(Date.now() - UNDO_WINDOW_MS - 1000) })
-    await expect(undoEntry(transaction.id)).rejects.toThrow(/Too late to undo/)
+    const lastMonth = new Date(Date.now() - 30 * 86400000)
+    await db.transactions.update(transaction.id, { createdAt: lastMonth })
+    expect((await undoEntry(transaction.id)).customer.credits).toBe(5)
+    await expect(undoEntry(transaction.id)).rejects.toThrow(/Already undone/)
   })
 
   it('only undoes entries', async () => {

@@ -82,17 +82,15 @@ export async function adjust(customerId, { delta, note }) {
   })
 }
 
-// After this, a mistake is repaired with adjust() instead, which leaves a
-// visible reason in the history rather than quietly rewriting the past.
-export const UNDO_WINDOW_MS = 15 * 60 * 1000
-
+// Undo has no time limit. It used to expire after 15 minutes, back when it
+// lived in a toast that expired too; now that it sits in the history it is
+// found on purpose, and a button that vanishes on a timer while someone is
+// looking at it is worse than one that is always there. It is not a silent
+// edit either — the reversal is written as its own visible history row.
 export async function undoEntry(transactionId) {
   return db.transaction('rw', db.customers, db.transactions, async () => {
     const original = await db.transactions.get(Number(transactionId))
     if (!original || original.type !== 'ENTRY') throw new CreditError(404, 'Entry not found')
-    if (Date.now() - original.createdAt.getTime() > UNDO_WINDOW_MS) {
-      throw new CreditError(409, 'Too late to undo — use Adjust instead')
-    }
 
     // The unique index on reversalOfId is what stops a double undo: the second
     // insert for the same entry fails instead of handing back the credits twice.

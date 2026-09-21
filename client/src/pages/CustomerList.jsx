@@ -67,18 +67,28 @@ export function CustomerList() {
   return (
     <Layout>
       <Stack gap="md">
-        {/* Scanning the pass is the fast path at a busy counter, so it gets the
-            top of the screen rather than an icon tucked inside the search box. */}
-        <Button
-          component={Link}
-          to="/scan"
-          size="xl"
-          fullWidth
-          className="scan-cta"
-          leftSection={<IconQrcode size={30} stroke={1.9} />}
-        >
-          Scan pass
-        </Button>
+        {/* The two things the counter starts from, side by side at the top.
+            Scan is the wider, filled one: it is the fast path when someone
+            walks up with their pass already open. */}
+        <Group gap="xs" wrap="nowrap" className="action-row">
+          <Button
+            component={Link}
+            to="/customers/new"
+            variant="light"
+            leftSection={<IconPlus size={22} />}
+            style={{ flex: 4 }}
+          >
+            Add
+          </Button>
+          <Button
+            component={Link}
+            to="/scan"
+            leftSection={<IconQrcode size={28} stroke={1.9} />}
+            style={{ flex: 6 }}
+          >
+            Scan pass
+          </Button>
+        </Group>
 
         <TextInput
           placeholder="or search by name or phone"
@@ -121,15 +131,14 @@ export function CustomerList() {
                   Add as new customer
                 </Button>
               </>
-            ) : filter !== 'all' ? (
-              <Text c="dimmed">Nobody here — everyone has entries left.</Text>
+            ) : filter === 'low' ? (
+              <Text c="dimmed">Nobody is running low.</Text>
+            ) : filter === 'finished' ? (
+              <Text c="dimmed">Nobody has run out.</Text>
             ) : (
               <>
                 <Text fw={600} mb={4}>No customers yet</Text>
-                <Text c="dimmed" size="sm" mb="md">Add the first person and pick their plan.</Text>
-                <Button leftSection={<IconUserPlus size={20} />} component={Link} to="/customers/new">
-                  Add a customer
-                </Button>
+                <Text c="dimmed" size="sm">Tap <b>Add</b> above to set up the first person.</Text>
               </>
             )}
           </Card>
@@ -139,10 +148,6 @@ export function CustomerList() {
           </Stack>
         )}
       </Stack>
-
-      <Button className="fab" component={Link} to="/customers/new" leftSection={<IconPlus size={22} />} size="lg">
-        Add
-      </Button>
     </Layout>
   )
 }

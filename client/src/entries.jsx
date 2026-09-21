@@ -1,48 +1,23 @@
-import { Button, Group, Text } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { spendEntries, undoEntry } from './db/credits.js'
+import { spendEntries } from './db/credits.js'
 
 export function vibrate(pattern = 40) {
   try { navigator.vibrate?.(pattern) } catch { /* unsupported */ }
 }
 
-async function undo(toastId, customer, transactionId, onChange) {
-  notifications.hide(toastId)
-  try {
-    const result = await undoEntry(transactionId)
-    onChange?.(result)
-    notifications.show({ color: 'blue', message: `Undone — ${customer.name} has ${result.customer.credits} left` })
-  } catch (err) {
-    notifications.show({ color: 'red', message: err.message })
-  }
-}
-
-// Deducts entries and shows a toast with Undo, so the counter flow stays one
-// tap. There is no "today's visits" screen any more, so this toast is the main
-// way to take a wrong tap back — hence the long autoClose. After it goes,
-// Adjust balance on the customer's page is the repair.
-export async function deductEntries(customer, count, { onChange } = {}) {
+// Deducts an entry and confirms it briefly. There is no Undo in here any more:
+// a toast that has to be caught before it disappears is the wrong home for the
+// one action that takes a mistake back, and it sat in the way of the next
+// customer. Undo lives on the history row instead, where it can be found on
+// purpose and never expires.
+export async function deductEntries(customer, count = 1, { onChange } = {}) {
   try {
     const result = await spendEntries(customer.id, { count })
     vibrate()
     onChange?.(result)
-    const toastId = `entry-${result.transaction.id}`
     notifications.show({
-      id: toastId,
       color: 'green',
-      autoClose: 12000,
-      withCloseButton: false,
-      message: (
-        <Group justify="space-between" wrap="nowrap">
-          <div>
-            <Text fw={700}>{customer.name} — {count} {count === 1 ? 'entry' : 'entries'} used</Text>
-            <Text size="sm" c="dimmed">{result.customer.credits} left</Text>
-          </div>
-          <Button size="sm" variant="light" color="blue" onClick={() => undo(toastId, customer, result.transaction.id, onChange)}>
-            Undo
-          </Button>
-        </Group>
-      ),
+      message: `${customer.name} — ${count === 1 ? '1 entry' : `${count} entries`} used · ${result.customer.credits} left`,
     })
     return result
   } catch (err) {

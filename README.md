@@ -69,7 +69,7 @@ client/
 rule is enforced there rather than in a screen, which is why the tests can
 cover the whole business logic without rendering anything.
 
-### Four decisions worth knowing
+### Five decisions worth knowing
 
 **Balances change inside a transaction.** `applyChange` in
 [credits.js](client/src/db/credits.js) re-reads the balance and writes the
@@ -82,6 +82,13 @@ tap charging once and crediting twice.
 **Uniqueness is an index, not a check.** Customers carry a stored `nameLower`
 and a stored `passCode`, both with unique indexes. Duplicate names and
 duplicate passes are impossible at the database level, not merely unlikely.
+
+**Undo has no time limit, on purpose.** It used to expire after 15 minutes,
+which made sense while it lived in a toast that expired too. Now that it sits
+on the history row it is found deliberately, and a button that disappears on a
+timer while someone is looking at it is worse than one that is always there.
+`getCustomer` marks each row `undone`, so a reversed entry shows as cancelled
+instead of just losing its button.
 
 **A customer row cannot spend an entry.** The list is navigation only; the
 balance sits where a Use button would otherwise be. Deducting always costs a
@@ -129,14 +136,16 @@ file is rejected with a clear message rather than restored into the wrong shape.
 - **The customer list is read-only.** Rows show the balance and open the
   customer; entries are only ever spent from the customer's own page or after
   a scan.
-- **Entries** can be used several at a time and are refused if the balance is
-  too low. Undo lives in the toast for 12 seconds; after that **Adjust
-  balance** on the customer's page fixes it and records a reason.
+- **One tap is one meal.** A group of four is four taps, each its own history
+  line. Entries are refused when the balance is too low.
+- **Undo lives on the history row**, not in a popup, and never expires. It
+  writes a visible `Undo entry` line rather than erasing anything. **Adjust
+  balance** remains for corrections that are not a straight reversal.
 - **New customer** = name → plan → QR pass, in one flow. A name clash appears
   while it is being typed; similar names show a non-blocking hint.
-- **Passes**: each customer gets a QR, shareable as an image. **Scan pass** is
-  the first thing on the counter screen, since scanning is the fast path. A
-  leaked pass can be replaced.
+- **Passes**: each customer gets a QR, shareable as an image. **Add** and
+  **Scan pass** sit together at the top of the counter screen, Scan the wider
+  of the two. A leaked pass can be replaced.
 - **Backup**: Menu → Backup downloads the whole database as one JSON file, and
   restores from it.
 
@@ -167,3 +176,6 @@ file is rejected with a clear message rather than restored into the wrong shape.
   customer's page); Scan pass promoted to the top of the counter screen; fixed
   the plan picker treating a normal plan as a custom one and springing open a
   stepper at 10 entries
+- **v1.2** — undo moved from the toast to the history row and no longer
+  expires; the "how many people are eating" stepper is gone (one tap is one
+  meal); Add and Scan pass share one row at the top; the icon is a plate

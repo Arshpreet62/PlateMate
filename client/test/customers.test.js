@@ -94,6 +94,18 @@ describe('customer page', () => {
     expect(await getCustomer(customer.id, { limit: null }).then((c) => c.transactions)).toHaveLength(23)
   })
 
+  it('marks which entries have already been undone', async () => {
+    const customer = await customerWith(5)
+    const first = (await spendEntries(customer.id, { count: 1 })).transaction
+    await spendEntries(customer.id, { count: 1 })
+    await undoEntry(first.id)
+
+    const { transactions } = await getCustomer(customer.id)
+    const entries = transactions.filter((t) => t.type === 'ENTRY')
+    expect(entries.find((t) => t.id === first.id).undone).toBe(true)
+    expect(entries.filter((t) => t.id !== first.id).every((t) => t.undone === false)).toBe(true)
+  })
+
   it('reports a missing customer', async () => {
     await expect(getCustomer('nope')).rejects.toThrow(/Customer not found/)
   })

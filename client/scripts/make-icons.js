@@ -7,10 +7,13 @@ import sharp from 'sharp'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 
-// A pass with a punched edge and a tick: what the app is for, in one glyph.
+// A plate seen from above with a meal ticked off: the app's whole job, and it
+// still reads at 48px on a home screen. The rim ring is what stops the white
+// circle looking like a blank dot.
 const MARK = `
-  <rect x="12" y="18" width="40" height="28" rx="7" fill="#fff" mask="url(#ticket)"/>
-  <path d="M24 32.5 l5 5 l11 -11" fill="none" stroke="#4338CA" stroke-width="4"
+  <circle cx="32" cy="32" r="20" fill="#fff"/>
+  <circle cx="32" cy="32" r="15.5" fill="none" stroke="#c7d2fe" stroke-width="1.6"/>
+  <path d="M25 32.5 l5 5 l10 -11.5" fill="none" stroke="#4338CA" stroke-width="4.2"
         stroke-linecap="round" stroke-linejoin="round"/>`
 
 // scale < 1 keeps the mark inside the safe zone of a maskable icon, which
@@ -25,11 +28,6 @@ function icon({ radius = 15, scale = 1 } = {}) {
       <stop offset="0" stop-color="#6366F1"/>
       <stop offset="1" stop-color="#4338CA"/>
     </linearGradient>
-    <mask id="ticket">
-      <rect x="12" y="18" width="40" height="28" rx="7" fill="#fff"/>
-      <circle cx="12" cy="32" r="5" fill="#000"/>
-      <circle cx="52" cy="32" r="5" fill="#000"/>
-    </mask>
   </defs>
   <rect width="64" height="64" rx="${radius}" fill="url(#bg)"/>${mark}
 </svg>

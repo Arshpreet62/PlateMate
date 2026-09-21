@@ -1,15 +1,14 @@
 import { ActionIcon, Box, Button, Card, Center, Group, Loader, Menu, Modal, NumberInput, Stack, Text, Textarea, TextInput, Title } from '@mantine/core'
 import { modals } from '@mantine/modals'
 import { notifications } from '@mantine/notifications'
-import { IconAdjustments, IconDotsVertical, IconPencil, IconPlus, IconQrcode, IconRefreshAlert } from '@tabler/icons-react'
+import { IconAdjustments, IconArrowBackUp, IconDotsVertical, IconPencil, IconPlus, IconQrcode, IconRefreshAlert } from '@tabler/icons-react'
 import { useCallback, useEffect, useState } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import { CustomerAvatar } from '../components/CustomerBits.jsx'
 import { Layout } from '../components/Layout.jsx'
 import { QrModal } from '../components/QrModal.jsx'
-import { Stepper } from '../components/Stepper.jsx'
 import { TopupModal } from '../components/TopupModal.jsx'
-import { adjust as adjustBalance } from '../db/credits.js'
+import { adjust as adjustBalance, undoEntry } from '../db/credits.js'
 import { getCustomer, updateCustomer } from '../db/customers.js'
 import { replacePass } from '../db/qr.js'
 import { deductEntries } from '../entries.jsx'
@@ -17,7 +16,7 @@ import { useAction } from '../useAction.js'
 import { useNameCheck } from '../useNameCheck.js'
 
 const typeLabel = { TOPUP: 'Added', ENTRY: 'Ate', ADJUST: 'Adjusted' }
-const typeColor = { TOPUP: 'green', ENTRY: 'brand', ADJUST: 'blue' }
+const typeColor = { TOPUP: 'green', ENTRY: 'dark', ADJUST: 'blue' }
 
 function dayLabel(iso) {
   const d = new Date(iso)
@@ -49,7 +48,6 @@ export function Customer() {
   const [customer, setCustomer] = useState(null)
   const [error, setError] = useState(null)
   const [modal, setModal] = useState(params.get('topup') ? 'topup' : null)
-  const [count, setCount] = useState(1)
   const [showAllHistory, setShowAllHistory] = useState(false)
   const { busy, run: guard } = useAction()
   const [adjust, setAdjust] = useState({ delta: 1, note: '' })
@@ -79,10 +77,20 @@ export function Customer() {
       }
     })
 
-  const spend = () =>
-    guard(async () => {
-      await deductEntries(customer, count, { onChange: load })
-      setCount(1)
+  const spend = () => guard(() => deductEntries(customer, 1, { onChange: load }))
+
+  // Confirmed, because a stray tap here silently hands out a free meal.
+  const confirmUndo = (transaction) =>
+    modals.openConfirmModal({
+      title: 'Undo this entry?',
+      children: (
+        <Text size="sm">
+          {customer.name} gets {-transaction.delta} {-transaction.delta === 1 ? 'entry' : 'entries'} back. The undo is
+          recorded in their history.
+        </Text>
+      ),
+      labels: { confirm: 'Undo', cancel: 'Keep' },
+      onConfirm: () => run(() => undoEntry(transaction.id), (r) => `Undone — ${r.customer.credits} left`),
     })
 
   const submitAdjust = () =>
@@ -121,8 +129,6 @@ export function Customer() {
       </Layout>
     )
   }
-
-  const canUse = customer.credits >= count && count >= 1
 
   const menu = (
     <Menu position="bottom-end" shadow="md" width={220}>
@@ -176,15 +182,11 @@ export function Customer() {
         </Box>
 
         {customer.credits > 0 ? (
-          <Card withBorder padding="md">
-            <Stack gap="sm">
-              <Text fw={600} ta="center" c="dimmed">How many people are eating?</Text>
-              <Stepper value={count} onChange={setCount} min={1} max={customer.credits} />
-              <Button size="xl" loading={busy} disabled={!canUse} onClick={spend}>
-                Use {count} {count === 1 ? 'entry' : 'entries'}
-              </Button>
-            </Stack>
-          </Card>
+          // One tap is one meal. A group of four is four taps, each its own
+          // history line, each undoable on its own.
+          <Button size="xl" className="use-cta" loading={busy} onClick={spend}>
+            Use 1 entry
+          </Button>
         ) : (
           <Button size="xl" leftSection={<IconPlus size={22} />} onClick={() => setModal('topup')}>
             Renew plan
@@ -206,18 +208,36 @@ export function Customer() {
                 <Text size="xs" c="dimmed" fw={600} tt="uppercase" mb={4}>{g.label}</Text>
                 <Card withBorder padding={0}>
                   {g.items.map((t, i) => (
-                    <Group key={t.id} wrap="nowrap" px="md" py="sm" className={i ? 'history-row' : undefined}>
-                      <Text fw={800} w={44} c={typeColor[t.type]} ta="right" className="balance-pill">
+                    <Group
+                      key={t.id}
+                      wrap="nowrap"
+                      px="md"
+                      py="sm"
+                      className={i ? 'history-row' : undefined}
+                      data-undone={t.undone || undefined}
+                    >
+                      <Text fw={800} w={44} c={t.undone ? 'dimmed' : typeColor[t.type]} ta="right" className="balance-pill">
                         {t.delta > 0 ? '+' : ''}{t.delta}
                       </Text>
                       <Box style={{ flex: 1, minWidth: 0 }}>
                         <Text fw={600} size="sm">
-                          {typeLabel[t.type]}{t.packName ? ` · ${t.packName}` : ''}
+                          {typeLabel[t.type]}{t.packName ? ` · ${t.packName}` : ''}{t.undone ? ' · undone' : ''}
                         </Text>
                         <Text size="xs" c="dimmed" truncate>
                           {timeOf(t.createdAt)}{t.note ? ` · ${t.note}` : ''}
                         </Text>
                       </Box>
+                      {t.type === 'ENTRY' && !t.undone && (
+                        <ActionIcon
+                          variant="light"
+                          color="blue"
+                          size="lg"
+                          aria-label={`Undo the entry at ${timeOf(t.createdAt)}`}
+                          onClick={() => confirmUndo(t)}
+                        >
+                          <IconArrowBackUp size={20} />
+                        </ActionIcon>
+                      )}
                     </Group>
                   ))}
                 </Card>
