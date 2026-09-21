@@ -8,8 +8,8 @@ import {
   listCustomers,
   updateCustomer,
 } from '../src/db/customers.js'
-import { spendEntries } from '../src/db/credits.js'
-import { customerWith, resetForTests } from './helpers.js'
+import { spendEntries, topup, undoEntry } from '../src/db/credits.js'
+import { customerWith, packNamed, resetForTests } from './helpers.js'
 
 beforeEach(resetForTests)
 
@@ -52,6 +52,17 @@ describe('finding customers', () => {
     expect(all.find((c) => c.name === 'Never Been').lastVisitAt).toBeNull()
   })
 
+  it('does not count an entry that was undone as a visit', async () => {
+    const customer = await customerWith(5, 'Ravi Kumar')
+    const { transaction } = await spendEntries(customer.id, { count: 1 })
+    await undoEntry(transaction.id)
+    expect((await listCustomers())[0].lastVisitAt).toBeNull()
+
+    // a real visit after the undone one still counts
+    await spendEntries(customer.id, { count: 1 })
+    expect((await listCustomers())[0].lastVisitAt).toBeInstanceOf(Date)
+  })
+
   it('spots an exact name and near-misses while typing', async () => {
     await createCustomer({ name: 'Guru Sharma' })
     expect((await findByName('  GURU sharma ')).name).toBe('Guru Sharma')
@@ -67,8 +78,20 @@ describe('customer page', () => {
     await spendEntries(customer.id, { count: 1 })
     await spendEntries(customer.id, { count: 2 })
     const full = await getCustomer(customer.id)
-    expect(full.qr).toBe(`buffet:${customer.id}`)
+    expect(full.qr).toBe(`platemate:${customer.passCode}`)
     expect(full.transactions.map((t) => t.delta)).toEqual([-2, -1])
+  })
+
+  it('shows the most recent 20 by default and all of them on request', async () => {
+    const customer = await customerWith(0)
+    const pack = await packNamed('Monthly pack')
+    await topup(customer.id, { packId: pack.id })
+    for (let i = 0; i < 22; i++) await spendEntries(customer.id, { count: 1 })
+
+    const page = await getCustomer(customer.id)
+    expect(page.transactions).toHaveLength(20)
+    expect(page.transactionCount).toBe(23)
+    expect(await getCustomer(customer.id, { limit: null }).then((c) => c.transactions)).toHaveLength(23)
   })
 
   it('reports a missing customer', async () => {

@@ -11,8 +11,8 @@ export default defineConfig({
       workbox: { navigateFallbackDenylist: [/^\/api\//] },
       includeAssets: ['icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png'],
       manifest: {
-        name: 'Buffet Pass',
-        short_name: 'Buffet Pass',
+        name: 'PlateMate',
+        short_name: 'PlateMate',
         description: 'Meal passes and entries for a buffet counter',
         theme_color: '#4f46e5',
         background_color: '#f6f7fb',

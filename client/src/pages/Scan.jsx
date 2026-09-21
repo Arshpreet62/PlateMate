@@ -7,6 +7,7 @@ import { Layout } from '../components/Layout.jsx'
 import { Stepper } from '../components/Stepper.jsx'
 import { scan } from '../db/qr.js'
 import { deductEntries as deduct, vibrate } from '../entries.jsx'
+import { useAction } from '../useAction.js'
 
 const REGION_ID = 'qr-reader'
 
@@ -16,7 +17,7 @@ export function Scan() {
   const [customer, setCustomer] = useState(null)
   const [message, setMessage] = useState('')
   const [count, setCount] = useState(1)
-  const [busy, setBusy] = useState(false)
+  const { busy, run } = useAction()
 
   const stop = async () => {
     const s = scannerRef.current
@@ -77,12 +78,11 @@ export function Scan() {
     return () => { stop() }
   }, [])
 
-  const spend = async () => {
-    setBusy(true)
-    await deduct(customer, count, { onChange: (r) => setCustomer((c) => ({ ...c, credits: r.customer.credits })) })
-    setCount(1)
-    setBusy(false)
-  }
+  const spend = () =>
+    run(async () => {
+      await deduct(customer, count, { onChange: (r) => setCustomer((c) => ({ ...c, credits: r.customer.credits })) })
+      setCount(1)
+    })
 
   const showCamera = phase === 'starting' || phase === 'scanning'
 

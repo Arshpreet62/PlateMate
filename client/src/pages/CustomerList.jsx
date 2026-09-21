@@ -7,6 +7,7 @@ import { Layout } from '../components/Layout.jsx'
 import { Stepper } from '../components/Stepper.jsx'
 import { filterCustomers, listCustomers } from '../db/customers.js'
 import { deductEntries } from '../entries.jsx'
+import { useAction } from '../useAction.js'
 
 const FILTERS = [
   { key: 'all', label: 'All', match: () => true },
@@ -56,7 +57,8 @@ export function CustomerList() {
   const [filter, setFilter] = useState('all')
   const [group, setGroup] = useState(null) // customer chosen for a multi-person deduction
   const [count, setCount] = useState(1)
-  const [busyId, setBusyId] = useState(null)
+  const [busyId, setBusyId] = useState(null) // which row shows a spinner
+  const { run } = useAction()
 
   const load = useCallback(() => {
     listCustomers().then(setCustomers).catch(() => setCustomers([]))
@@ -71,14 +73,21 @@ export function CustomerList() {
     return filterCustomers(customers.filter(match), query)
   }, [customers, filter, query])
 
+  // Patch the one row rather than reloading the whole list, so the number
+  // changes under the finger with no flicker. lastVisitAt is left to the next
+  // full load: guessing it here would be wrong after an undo.
   const patch = (updated) =>
-    setCustomers((list) => list?.map((c) => (c.id === updated.id ? { ...c, credits: updated.credits, lastVisitAt: new Date() } : c)) ?? list)
+    setCustomers((list) => list?.map((c) => (c.id === updated.id ? { ...c, credits: updated.credits } : c)) ?? list)
 
-  const spend = async (customer, n) => {
-    setBusyId(customer.id)
-    await deductEntries(customer, n, { onChange: (r) => patch(r.customer) })
-    setBusyId(null)
-  }
+  const spend = (customer, n) =>
+    run(async () => {
+      setBusyId(customer.id)
+      try {
+        await deductEntries(customer, n, { onChange: (r) => patch(r.customer) })
+      } finally {
+        setBusyId(null)
+      }
+    })
 
   const groupUse = async () => {
     const c = group

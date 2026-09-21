@@ -1,6 +1,7 @@
 import { Center, Loader } from '@mantine/core'
 import { lazy, Suspense } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
+import { Backup } from './pages/Backup.jsx'
 import { Customer } from './pages/Customer.jsx'
 import { CustomerList } from './pages/CustomerList.jsx'
 import { MenuPage } from './pages/MenuPage.jsx'
@@ -17,6 +18,7 @@ function App() {
       <Route path="/customers/:id" element={<Customer />} />
       <Route path="/menu" element={<MenuPage />} />
       <Route path="/menu/plans" element={<Plans />} />
+      <Route path="/menu/backup" element={<Backup />} />
       <Route
         path="/scan"
         element={

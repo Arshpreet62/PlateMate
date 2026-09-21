@@ -11,6 +11,7 @@ import { topup } from '../db/credits.js'
 import { createCustomer, getCustomer } from '../db/customers.js'
 import { normaliseName } from '../db/schema.js'
 import { vibrate } from '../entries.jsx'
+import { useAction } from '../useAction.js'
 import { useNameCheck } from '../useNameCheck.js'
 
 const STEPS = ['Name', 'Plan', 'QR pass']
@@ -59,32 +60,31 @@ export function NewCustomer() {
   const [moreOpen, setMoreOpen] = useState(false)
   const [plan, setPlan] = useState(null)
   const [created, setCreated] = useState(null) // customer record once the create succeeded
-  const [busy, setBusy] = useState(false)
+  const { busy, run } = useAction()
 
   const cleanName = normaliseName(name)
   // Checked as they type, so a clash never gets as far as the plan step.
   const { taken, similar } = useNameCheck(cleanName)
 
-  const createAndStart = async () => {
+  const createAndStart = () => {
     if (!plan) return
-    setBusy(true)
-    try {
-      let customer = created
-      if (!customer) {
-        customer = await createCustomer({ name: cleanName, phone, notes })
-        setCreated(customer)
+    return run(async () => {
+      try {
+        let customer = created
+        if (!customer) {
+          customer = await createCustomer({ name: cleanName, phone, notes })
+          setCreated(customer)
+        }
+        const result = await topup(customer.id, plan.packId ? { packId: plan.packId } : { credits: plan.credits })
+        const full = await getCustomer(customer.id)
+        setCreated({ ...full, credits: result.customer.credits })
+        vibrate()
+        setStep(2)
+      } catch (err) {
+        if (err.status === 409 && !created) setStep(0)
+        notifications.show({ color: 'red', message: err.message, autoClose: 6000 })
       }
-      const result = await topup(customer.id, plan.packId ? { packId: plan.packId } : { credits: plan.credits })
-      const full = await getCustomer(customer.id)
-      setCreated({ ...full, credits: result.customer.credits })
-      vibrate()
-      setStep(2)
-    } catch (err) {
-      if (err.status === 409 && !created) setStep(0)
-      notifications.show({ color: 'red', message: err.message, autoClose: 6000 })
-    } finally {
-      setBusy(false)
-    }
+    })
   }
 
   return (

@@ -2,6 +2,9 @@ import { ActionIcon, Box, Container, Group, Text, UnstyledButton } from '@mantin
 import { IconArrowLeft, IconMenu2, IconUsers } from '@tabler/icons-react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 
+// Two destinations only. Adding a customer is a button on the list, and
+// scanning is an icon in the search box, because both belong next to the list
+// they act on rather than in a tab of their own.
 const NAV = [
   { to: '/', label: 'Customers', icon: IconUsers },
   { to: '/menu', label: 'Menu', icon: IconMenu2 },
@@ -25,7 +28,7 @@ export function Layout({ title, children, back = false, action }) {
               </ActionIcon>
             )}
             <Text fw={800} size="xl" truncate>
-              {title ?? 'Buffet Pass'}
+              {title ?? 'PlateMate'}
             </Text>
           </Group>
           {action}

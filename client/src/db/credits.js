@@ -23,7 +23,9 @@ function positiveInt(value) {
 
 // Balance change and ledger row in one IndexedDB transaction. Read-modify-write
 // inside the transaction is safe: the browser runs readwrite transactions over
-// the same stores one at a time, so a double tap cannot deduct twice.
+// the same stores one at a time, so a double tap cannot spend the same entry
+// twice. Note this only protects *deductions* — two top-ups are both valid on
+// their own, so a double tap there is caught at the button by useAction().
 async function applyChange(customerId, data) {
   return db.transaction('rw', db.customers, db.transactions, async () => {
     const customer = await db.customers.get(customerId)
@@ -83,6 +85,9 @@ export async function spendEntries(customerId, { count = 1, note } = {}) {
   })
 }
 
+// Repairs a wrong balance, and always records why. It cannot push a balance
+// below zero — a negative number of meals owed is not a thing the counter can
+// act on, so the refusal is deliberate.
 export async function adjust(customerId, { delta, note }) {
   const n = Number(delta)
   if (!Number.isInteger(n) || n === 0) throw new CreditError(400, 'Delta must be a non-zero whole number')
@@ -94,6 +99,8 @@ export async function adjust(customerId, { delta, note }) {
   })
 }
 
+// After this, a mistake is repaired with adjust() instead, which leaves a
+// visible reason in the history rather than quietly rewriting the past.
 export const UNDO_WINDOW_MS = 15 * 60 * 1000
 
 export async function undoEntry(transactionId) {

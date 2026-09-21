@@ -5,7 +5,7 @@ import { QRCodeCanvas, QRCodeSVG } from 'qrcode.react'
 import { useRef, useState } from 'react'
 
 function fileNameFor(name) {
-  return `${name.replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase() || 'customer'}-buffet-pass.png`
+  return `${name.replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase() || 'customer'}-platemate-pass.png`
 }
 
 // Compose a shareable card: name on top, QR in the middle, label below.
@@ -27,7 +27,7 @@ async function makeImage(sourceCanvas, name) {
   ctx.fillText('Show this at the counter', W / 2, 770)
   ctx.font = 'bold 28px system-ui, sans-serif'
   ctx.fillStyle = '#4f46e5'
-  ctx.fillText('Buffet Pass', W / 2, 830)
+  ctx.fillText('PlateMate', W / 2, 830)
   const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'))
   return new File([blob], fileNameFor(name), { type: 'image/png' })
 }
@@ -42,7 +42,7 @@ export function QrPass({ customer, hint }) {
     try {
       const file = await makeImage(canvasRef.current, customer.name)
       if (navigator.canShare?.({ files: [file] })) {
-        await navigator.share({ files: [file], title: `${customer.name} — Buffet Pass` })
+        await navigator.share({ files: [file], title: `${customer.name} — PlateMate pass` })
       } else {
         const url = URL.createObjectURL(file)
         const a = document.createElement('a')

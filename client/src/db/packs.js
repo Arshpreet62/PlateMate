@@ -26,6 +26,7 @@ function validatePack(body, { partial = false } = {}) {
   return { data: out }
 }
 
+// all: true includes plans that have been switched off, for the editor.
 export async function listPacks({ all = false } = {}) {
   const packs = await db.packs.toArray()
   return packs
@@ -49,6 +50,8 @@ export async function updatePack(id, body) {
   return db.packs.get(Number(id))
 }
 
+// Safe to hard-delete: a sale stores the plan's name and price on the
+// transaction itself, so past history is unaffected by losing the plan.
 export async function deletePack(id) {
   await db.packs.delete(Number(id))
 }

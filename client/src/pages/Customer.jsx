@@ -1,6 +1,7 @@
 import { ActionIcon, Box, Button, Card, Center, Group, Loader, Menu, Modal, NumberInput, Stack, Text, Textarea, TextInput, Title } from '@mantine/core'
+import { modals } from '@mantine/modals'
 import { notifications } from '@mantine/notifications'
-import { IconAdjustments, IconDotsVertical, IconPencil, IconPlus, IconQrcode } from '@tabler/icons-react'
+import { IconAdjustments, IconDotsVertical, IconPencil, IconPlus, IconQrcode, IconRefreshAlert } from '@tabler/icons-react'
 import { useCallback, useEffect, useState } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import { CustomerAvatar } from '../components/CustomerBits.jsx'
@@ -10,7 +11,9 @@ import { Stepper } from '../components/Stepper.jsx'
 import { TopupModal } from '../components/TopupModal.jsx'
 import { adjust as adjustBalance } from '../db/credits.js'
 import { getCustomer, updateCustomer } from '../db/customers.js'
+import { replacePass } from '../db/qr.js'
 import { deductEntries } from '../entries.jsx'
+import { useAction } from '../useAction.js'
 import { useNameCheck } from '../useNameCheck.js'
 
 const typeLabel = { TOPUP: 'Added', ENTRY: 'Ate', ADJUST: 'Adjusted' }
@@ -47,14 +50,15 @@ export function Customer() {
   const [error, setError] = useState(null)
   const [modal, setModal] = useState(params.get('topup') ? 'topup' : null)
   const [count, setCount] = useState(1)
-  const [busy, setBusy] = useState(false)
+  const [showAllHistory, setShowAllHistory] = useState(false)
+  const { busy, run: guard } = useAction()
   const [adjust, setAdjust] = useState({ delta: 1, note: '' })
   const [edit, setEdit] = useState({ name: '', phone: '', notes: '' })
   const nameCheck = useNameCheck(modal === 'edit' ? edit.name : '', { ignoreId: id })
 
   const load = useCallback(() => {
-    getCustomer(id).then(setCustomer).catch((e) => setError(e.message))
-  }, [id])
+    getCustomer(id, { limit: showAllHistory ? null : 20 }).then(setCustomer).catch((e) => setError(e.message))
+  }, [id, showAllHistory])
 
   useEffect(load, [load])
 
@@ -63,32 +67,45 @@ export function Customer() {
     if (params.get('topup')) setParams({}, { replace: true })
   }
 
-  const run = async (fn, successMessage) => {
-    setBusy(true)
-    try {
-      const result = await fn()
-      notifications.show({ color: 'green', message: successMessage(result) })
-      closeModal()
-      load()
-    } catch (err) {
-      notifications.show({ color: 'red', message: err.message })
-    } finally {
-      setBusy(false)
-    }
-  }
+  const run = (fn, successMessage) =>
+    guard(async () => {
+      try {
+        const result = await fn()
+        notifications.show({ color: 'green', message: successMessage(result) })
+        closeModal()
+        load()
+      } catch (err) {
+        notifications.show({ color: 'red', message: err.message })
+      }
+    })
 
-  const spend = async () => {
-    setBusy(true)
-    await deductEntries(customer, count, { onChange: load })
-    setCount(1)
-    setBusy(false)
-  }
+  const spend = () =>
+    guard(async () => {
+      await deductEntries(customer, count, { onChange: load })
+      setCount(1)
+    })
 
   const submitAdjust = () =>
     run(() => adjustBalance(id, adjust), (r) => `Balance is now ${r.customer.credits}`)
 
   const submitEdit = () =>
     run(() => updateCustomer(id, edit), () => 'Details saved')
+
+  // For when a customer's QR has been photographed by someone who should not
+  // have it: the old code stops resolving the moment a new one is issued.
+  const confirmReplacePass = () =>
+    modals.openConfirmModal({
+      title: 'Give them a new pass?',
+      children: (
+        <Text size="sm">
+          The QR code they have now will stop working. Anyone who saved a photo of it — including the customer — will
+          need the new one.
+        </Text>
+      ),
+      labels: { confirm: 'Replace pass', cancel: 'Keep current' },
+      confirmProps: { color: 'red' },
+      onConfirm: () => run(() => replacePass(id), () => 'New pass issued — share it with them'),
+    })
 
   if (error) {
     return (
@@ -126,6 +143,9 @@ export function Customer() {
         </Menu.Item>
         <Menu.Item leftSection={<IconAdjustments size={18} />} onClick={() => { setAdjust({ delta: 1, note: '' }); setModal('adjust') }}>
           Adjust balance
+        </Menu.Item>
+        <Menu.Item leftSection={<IconRefreshAlert size={18} />} onClick={confirmReplacePass}>
+          Replace pass
         </Menu.Item>
       </Menu.Dropdown>
     </Menu>
@@ -204,12 +224,17 @@ export function Customer() {
               </Box>
             ))
           )}
+          {!showAllHistory && customer.transactionCount > customer.transactions.length && (
+            <Button variant="subtle" color="gray" fullWidth size="sm" onClick={() => setShowAllHistory(true)}>
+              Show all {customer.transactionCount}
+            </Button>
+          )}
         </Box>
       </Stack>
 
       <TopupModal opened={modal === 'topup'} onClose={closeModal} customer={customer} onDone={load} />
 
-      <QrModal opened={modal === 'qr'} onClose={closeModal} customer={customer} />
+      <QrModal opened={modal === 'qr'} onClose={closeModal} customer={customer} onReplace={confirmReplacePass} />
 
       <Modal opened={modal === 'adjust'} onClose={closeModal} title="Adjust balance">
         <Stack>

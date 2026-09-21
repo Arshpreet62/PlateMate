@@ -18,7 +18,9 @@ async function undo(toastId, customer, transactionId, onChange) {
 }
 
 // Deducts entries and shows a toast with Undo, so the counter flow stays one
-// tap. This toast is the main way to take a mistake back, so it lingers.
+// tap. There is no "today's visits" screen any more, so this toast is the main
+// way to take a wrong tap back — hence the long autoClose. After it goes,
+// Adjust balance on the customer's page is the repair.
 export async function deductEntries(customer, count, { onChange } = {}) {
   try {
     const result = await spendEntries(customer.id, { count })
